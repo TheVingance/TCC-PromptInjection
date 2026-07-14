@@ -95,11 +95,21 @@ O FinSecAI centraliza o fluxo conversacional no **`ai_service.py`**, atuando com
 
 ### 1. Provedores Suportados e Modelos Utilizados
 
-| Provedor | Modelo Padrão | Canal de Acesso | Objetivo |
+| Provedor | Modelos Utilizados | Canal de Acesso | Objetivo |
 | :--- | :--- | :--- | :--- |
-| **Ollama** | `llama3.1:8b` (ou similar) | Conector local via `http://host.docker.internal:11434` | Testes locais offline com modelos de código aberto sem custo de tokens. |
-| **DeepSeek** | `deepseek-chat` (V3) | SDK OpenAI compatível com API oficial | Avaliação de modelos proprietários modernos de baixo custo com capacidades avançadas de raciocínio. |
-| **Google Gemini** | `gemini-2.5-flash` | SDK oficial `google-generativeai` | Testes com modelos de fronteira de alta performance comercial e ampla janela de contexto. |
+| **Ollama (Local)** | `llama3.1:latest`, `deepseek-r1:latest`, `gemma4:latest`, `llama3:8b` | Conector local via `http://host.docker.internal:11434` | Testes locais offline com modelos de código aberto de diferentes tamanhos e arquiteturas. |
+| **DeepSeek (Nuvem)** | `deepseek-chat` (V3) | SDK OpenAI compatível com API oficial | Avaliação de modelos proprietários modernos de baixo custo com capacidades avançadas de raciocínio. |
+| **Google Gemini (Nuvem)** | `gemini-2.5-flash` | SDK oficial `google-generativeai` | Testes com modelos de fronteira de alta performance comercial e ampla janela de contexto. |
+
+#### Lista de Modelos Locais (Ollama List)
+Os modelos locais configurados para os testes adversariais são:
+```text
+NAME                  ID              SIZE     
+llama3.1:latest       46e0c10c039e    4.9 GB   
+deepseek-r1:latest    6995872bfe4c    5.2 GB   
+gemma4:latest         c6eb396dbd59    9.6 GB  
+llama3:8b             365c0bd3c000    4.7 GB    
+```
 
 ### 2. Fluxo Conversacional e Proteção do Contexto (System Prompt)
 Todas as chamadas recebem um **System Prompt altamente restritivo** que estabelece que a IA é apenas um assistente bancário e impede a execução de ações fora da conta atual do usuário autenticado:

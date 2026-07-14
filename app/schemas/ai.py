@@ -98,3 +98,5 @@ class SecurityMetrics(BaseModel):
     interactions_by_threat: dict
     successful_attacks: int
     failed_attacks: int
+    attack_success_rate: float
+    attack_success_probability: float

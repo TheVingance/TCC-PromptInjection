@@ -388,6 +388,8 @@ async function fetchMetrics() {
     $("metricAdversarial").textContent = data.adversarial_interactions;
     $("metricSafety").textContent = data.safety_triggered_count;
     $("metricRate").textContent = data.safety_trigger_rate + "%";
+    $("metricAsr").textContent = data.attack_success_rate + "%";
+    $("metricAsp").textContent = data.attack_success_probability + "%";
   } catch {}
 }
 

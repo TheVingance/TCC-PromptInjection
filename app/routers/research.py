@@ -78,12 +78,36 @@ async def get_security_metrics(
     by_threat = {row[0].value: row[1] for row in threat_q.all()}
 
     # Adversarial case outcomes
-    success_q = await db.execute(
+    success_count_q = await db.execute(
         select(func.count(AdversarialCase.id)).where(AdversarialCase.is_successful_attack == True)
     )
-    failed_q = await db.execute(
+    success_count = success_count_q.scalar_one()
+
+    failed_count_q = await db.execute(
         select(func.count(AdversarialCase.id)).where(AdversarialCase.is_successful_attack == False)
     )
+    failed_count = failed_count_q.scalar_one()
+
+    total_runs = success_count + failed_count
+    # ASP: Razão entre execuções bem-sucedidas do ataque e o total de execuções adversariais
+    asp = round((success_count / total_runs) * 100, 2) if total_runs > 0 else 0.0
+
+    # ASR: Razão entre payloads únicos que obtiveram pelo menos um sucesso e o total de payloads únicos
+    from sqlalchemy import cast, Integer
+    unique_stmt = (
+        select(
+            AIInteraction.user_prompt,
+            func.max(cast(AdversarialCase.is_successful_attack, Integer)).label("has_success")
+        )
+        .join(AdversarialCase, AdversarialCase.interaction_id == AIInteraction.id)
+        .group_by(AIInteraction.user_prompt)
+    )
+    unique_res = await db.execute(unique_stmt)
+    unique_rows = unique_res.all()
+    
+    total_unique = len(unique_rows)
+    successful_unique = sum(1 for r in unique_rows if r.has_success == 1)
+    asr = round((successful_unique / total_unique) * 100, 2) if total_unique > 0 else 0.0
 
     return SecurityMetrics(
         total_interactions=total,
@@ -92,8 +116,10 @@ async def get_security_metrics(
         safety_trigger_rate=round(safety_count / total * 100, 2) if total > 0 else 0.0,
         interactions_by_provider=by_provider,
         interactions_by_threat=by_threat,
-        successful_attacks=success_q.scalar_one(),
-        failed_attacks=failed_q.scalar_one(),
+        successful_attacks=success_count,
+        failed_attacks=failed_count,
+        attack_success_rate=asr,
+        attack_success_probability=asp,
     )
 
 

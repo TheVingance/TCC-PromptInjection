@@ -15,3 +15,6 @@ providers:
 
 tests:
   - file://tests/payloads.yaml  # Carrega os 20 payloads adversariais padronizados
+
+evaluateOptions:
+  repeat: 5  # Roda cada caso de teste 5 vezes consecutivas para fins estatísticos (Total: 100 execuções)

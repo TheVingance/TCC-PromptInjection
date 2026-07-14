@@ -678,6 +678,7 @@ body {
 .metric-card-warning { border-color: rgba(255,180,56,0.2); }
 .metric-card-success { border-color: rgba(0,217,163,0.2); }
 .metric-card-info { border-color: rgba(79,158,255,0.2); }
+.metric-card-danger { border-color: rgba(255,77,109,0.2); }
 
 .metric-value {
   font-size: 22px;
@@ -689,6 +690,7 @@ body {
 .metric-card-warning .metric-value { color: var(--warning); }
 .metric-card-success .metric-value { color: var(--success); }
 .metric-card-info .metric-value { color: var(--info); }
+.metric-card-danger .metric-value { color: var(--danger); }
 
 .metric-label {
   font-size: 10px;

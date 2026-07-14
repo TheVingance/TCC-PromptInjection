@@ -23,6 +23,10 @@ const loginPassword  = $("loginPassword");
 const userNameDisplay = $("userNameDisplay");
 const userEmailDisplay = $("userEmailDisplay");
 const providerSelect = $("providerSelect");
+const ollamaModelGroup = $("ollamaModelGroup");
+const ollamaModelSelect = $("ollamaModelSelect");
+const customModelGroup = $("customModelGroup");
+const customModelInput = $("customModelInput");
 const adversarialMode = $("adversarialMode");
 const adversarialOptions = $("adversarialOptions");
 const threatCategory = $("threatCategory");
@@ -54,6 +58,7 @@ async function init() {
   }
   updateSessionBadge();
   setupLatencyCanvas();
+  updateModelSelectorsVisibility();
 }
 
 async function checkApiHealth() {
@@ -102,7 +107,11 @@ async function login() {
 
     if (!res.ok) {
       const err = await res.json();
-      alert("Erro: " + (err.detail || "Credenciais inválidas"));
+      // FastAPI validation errors return detail as an array of objects
+      const msg = Array.isArray(err.detail)
+        ? err.detail.map(e => `${e.loc?.slice(-1)[0] ?? ''}: ${e.msg}`).join('\n')
+        : (err.detail || "Credenciais inválidas");
+      alert("Erro: " + msg);
       return;
     }
 
@@ -160,12 +169,34 @@ adversarialMode.addEventListener("change", () => {
   }
 });
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
-const providerLabels = { ollama: "Ollama 8b", deepseek: "DeepSeek V3", gemini: "Gemini 2.5 Flash" };
+// ─── Provider & Model Selection ────────────────────────────────────────────────
+const providerLabels = { ollama: "Ollama" };
 
-providerSelect.addEventListener("change", () => {
-  currentProvider.textContent = providerLabels[providerSelect.value] || providerSelect.value;
-});
+function updateModelSelectorsVisibility() {
+  if (providerSelect.value === "ollama") {
+    ollamaModelGroup.classList.remove("hidden");
+    if (ollamaModelSelect.value === "custom") {
+      customModelGroup.classList.remove("hidden");
+    } else {
+      customModelGroup.classList.add("hidden");
+    }
+  } else {
+    ollamaModelGroup.classList.add("hidden");
+    customModelGroup.classList.add("hidden");
+  }
+
+  // Update header text
+  let modelLabel = providerLabels[providerSelect.value] || providerSelect.value;
+  if (providerSelect.value === "ollama") {
+    let specificModel = ollamaModelSelect.value === "custom" ? (customModelInput.value.trim() || "personalizado") : ollamaModelSelect.value;
+    modelLabel = `Ollama (${specificModel})`;
+  }
+  currentProvider.textContent = modelLabel;
+}
+
+providerSelect.addEventListener("change", updateModelSelectorsVisibility);
+ollamaModelSelect.addEventListener("change", updateModelSelectorsVisibility);
+customModelInput.addEventListener("input", updateModelSelectorsVisibility);
 
 // ─── Quick Prompts ────────────────────────────────────────────────────────────
 quickPrompts.addEventListener("click", e => {
@@ -214,10 +245,18 @@ async function sendMessage() {
   setStatus("Enviando para " + (providerLabels[providerSelect.value] || providerSelect.value) + "...");
 
   try {
+    let resolvedModelName = null;
+    if (providerSelect.value === "ollama") {
+      resolvedModelName = ollamaModelSelect.value === "custom" 
+        ? customModelInput.value.trim() 
+        : ollamaModelSelect.value;
+    }
+
     const body = {
       message: text,
       session_id: sessionId,
       provider: providerSelect.value,
+      model_name: resolvedModelName,
       is_adversarial: isAdv,
       threat_category: isAdv ? (threatCategory.value || "none") : "none",
       researcher_notes: isAdv ? (researcherNotes.value || null) : null,

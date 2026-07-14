@@ -18,6 +18,7 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=4000)
     session_id: Optional[str] = None
     provider: Optional[LLMProvider] = None   # overrides default
+    model_name: Optional[str] = None         # dynamically overrides LLM model (e.g. specific Ollama model)
     system_prompt: Optional[str] = None
     is_adversarial: bool = False             # flag for research tracking
     threat_category: ThreatCategory = ThreatCategory.NONE

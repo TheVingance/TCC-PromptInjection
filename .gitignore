@@ -41,3 +41,8 @@ logs/
 *.pem
 *.key
 *.cert
+node_modules
+
+# Local Environments
+.venv/
+pyrightconfig.json

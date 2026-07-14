@@ -11,7 +11,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, parent_dir)
+app_dir = os.path.join(parent_dir, "app")
+if os.path.exists(app_dir):
+    sys.path.insert(0, app_dir)
 
 from core.config import settings
 from core.security import get_password_hash
@@ -48,7 +52,7 @@ async def seed():
         users = []
         for i in range(5):
             user = User(
-                full_name=fake.name(),
+                full_name="Henrique Triches" if i == 0 else fake.name(),
                 email=f"user{i+1}@finsecai.test",
                 cpf=gen_cpf(),
                 hashed_password=get_password_hash("senha@123"),

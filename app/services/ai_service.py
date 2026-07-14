@@ -52,12 +52,13 @@ def _detect_safety_trigger(response: str) -> bool:
 async def _chat_ollama(
     user_message: str,
     system_prompt: str,
+    model_name: Optional[str] = None,
 ) -> tuple[str, Optional[int], float]:
     """Returns (response_text, tokens_used, latency_ms)"""
     start = time.time()
     url = f"{settings.OLLAMA_BASE_URL}/api/chat"
     payload = {
-        "model": settings.OLLAMA_MODEL,
+        "model": model_name or settings.OLLAMA_MODEL,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
@@ -82,6 +83,7 @@ async def _chat_ollama(
 async def _chat_deepseek(
     user_message: str,
     system_prompt: str,
+    model_name: Optional[str] = None,
 ) -> tuple[str, Optional[int], float]:
     start = time.time()
     client = AsyncOpenAI(
@@ -89,7 +91,7 @@ async def _chat_deepseek(
         base_url=settings.DEEPSEEK_BASE_URL,
     )
     response = await client.chat.completions.create(
-        model=settings.DEEPSEEK_MODEL,
+        model=model_name or settings.DEEPSEEK_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message},
@@ -107,13 +109,14 @@ async def _chat_deepseek(
 async def _chat_gemini(
     user_message: str,
     system_prompt: str,
+    model_name: Optional[str] = None,
 ) -> tuple[str, Optional[int], float]:
     import google.generativeai as genai
 
     start = time.time()
     genai.configure(api_key=settings.GEMINI_API_KEY)
     model = genai.GenerativeModel(
-        model_name=settings.GEMINI_MODEL,
+        model_name=model_name or settings.GEMINI_MODEL,
         system_instruction=system_prompt,
     )
     response = await model.generate_content_async(user_message)
@@ -135,6 +138,7 @@ async def process_chat(
     user_message: str,
     session_id: Optional[str] = None,
     provider: Optional[LLMProvider] = None,
+    model_name: Optional[str] = None,
     custom_system_prompt: Optional[str] = None,
     is_adversarial: bool = False,
     threat_category: ThreatCategory = ThreatCategory.NONE,
@@ -149,22 +153,23 @@ async def process_chat(
     response_text = ""
     tokens = None
     latency_ms = 0.0
+    model_name_persisted = resolved_provider.value
 
     try:
         if resolved_provider == LLMProvider.OLLAMA:
-            response_text, tokens, latency_ms = await _chat_ollama(user_message, sys_prompt)
-            model_name = settings.OLLAMA_MODEL
+            model_name_persisted = model_name or settings.OLLAMA_MODEL
+            response_text, tokens, latency_ms = await _chat_ollama(user_message, sys_prompt, model_name_persisted)
         elif resolved_provider == LLMProvider.DEEPSEEK:
-            response_text, tokens, latency_ms = await _chat_deepseek(user_message, sys_prompt)
-            model_name = settings.DEEPSEEK_MODEL
+            model_name_persisted = model_name or settings.DEEPSEEK_MODEL
+            response_text, tokens, latency_ms = await _chat_deepseek(user_message, sys_prompt, model_name_persisted)
         elif resolved_provider == LLMProvider.GEMINI:
-            response_text, tokens, latency_ms = await _chat_gemini(user_message, sys_prompt)
-            model_name = settings.GEMINI_MODEL
+            model_name_persisted = model_name or settings.GEMINI_MODEL
+            response_text, tokens, latency_ms = await _chat_gemini(user_message, sys_prompt, model_name_persisted)
         else:
             raise ValueError(f"Provider desconhecido: {resolved_provider}")
     except Exception as exc:
         error_msg = str(exc)
-        model_name = resolved_provider.value
+        model_name_persisted = resolved_provider.value
         response_text = f"[ERRO: {error_msg}]"
 
     safety_triggered = _detect_safety_trigger(response_text)
@@ -173,7 +178,7 @@ async def process_chat(
         user_id=user_id,
         session_id=sid,
         provider=resolved_provider,
-        model_name=model_name,
+        model_name=model_name_persisted,
         system_prompt=sys_prompt,
         user_prompt=user_message,
         assistant_response=response_text,

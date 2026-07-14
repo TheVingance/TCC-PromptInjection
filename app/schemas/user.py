@@ -1,19 +1,36 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field, field_validator
+import re
 
 
 class UserCreate(BaseModel):
     full_name: str = Field(..., min_length=3, max_length=150)
-    email: EmailStr
+    email: str = Field(..., description="E-mail do usuário")
     cpf: str = Field(..., pattern=r"^\d{3}\.\d{3}\.\d{3}-\d{2}$", description="CPF no formato 000.000.000-00")
     password: str = Field(..., min_length=8)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_format(cls, v: str) -> str:
+        if not re.match(r"^[^@]+@[^@]+\.[^@]+$", v):
+            raise ValueError("Formato de e-mail inválido")
+        return v.lower()
 
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=3, max_length=150)
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_format_opt(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            if not re.match(r"^[^@]+@[^@]+\.[^@]+$", v):
+                raise ValueError("Formato de e-mail inválido")
+            return v.lower()
+        return v
 
 
 class UserResponse(BaseModel):
@@ -34,5 +51,5 @@ class Token(BaseModel):
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str

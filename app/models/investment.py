@@ -20,7 +20,9 @@ class Investment(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     account_id: Mapped[int] = mapped_column(Integer, ForeignKey("accounts.id"), nullable=False)
-    investment_type: Mapped[InvestmentType] = mapped_column(Enum(InvestmentType), nullable=False)
+    investment_type: Mapped[InvestmentType] = mapped_column(
+        Enum(InvestmentType, values_callable=lambda obj: [e.value for e in obj]), nullable=False
+    )
     ticker: Mapped[str] = mapped_column(String(20), nullable=False)
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     quantity: Mapped[float] = mapped_column(Numeric(precision=15, scale=6), nullable=False)

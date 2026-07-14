@@ -27,7 +27,10 @@ class Loan(Base):
     term_months: Mapped[int] = mapped_column(Integer, nullable=False)
     monthly_payment: Mapped[float | None] = mapped_column(Numeric(precision=15, scale=2), nullable=True)
     outstanding_balance: Mapped[float | None] = mapped_column(Numeric(precision=15, scale=2), nullable=True)
-    status: Mapped[LoanStatus] = mapped_column(Enum(LoanStatus), default=LoanStatus.PENDING)
+    status: Mapped[LoanStatus] = mapped_column(
+        Enum(LoanStatus, values_callable=lambda obj: [e.value for e in obj]),
+        default=LoanStatus.PENDING
+    )
     purpose: Mapped[str | None] = mapped_column(Text, nullable=True)
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

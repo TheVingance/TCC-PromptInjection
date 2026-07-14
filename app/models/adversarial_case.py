@@ -22,7 +22,10 @@ class AdversarialCase(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     attack_vector: Mapped[str] = mapped_column(String(100), nullable=False)  # e.g. "prompt_injection"
-    severity: Mapped[CaseSeverity] = mapped_column(Enum(CaseSeverity), default=CaseSeverity.MEDIUM)
+    severity: Mapped[CaseSeverity] = mapped_column(
+        Enum(CaseSeverity, values_callable=lambda obj: [e.value for e in obj]),
+        default=CaseSeverity.MEDIUM
+    )
     expected_behavior: Mapped[str] = mapped_column(Text, nullable=False)     # What the model SHOULD do
     observed_behavior: Mapped[str | None] = mapped_column(Text, nullable=True)  # What it actually did
     is_successful_attack: Mapped[bool | None] = mapped_column(default=None, nullable=True)

@@ -31,7 +31,9 @@ class AIInteraction(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     session_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    provider: Mapped[LLMProvider] = mapped_column(Enum(LLMProvider), nullable=False)
+    provider: Mapped[LLMProvider] = mapped_column(
+        Enum(LLMProvider, values_callable=lambda obj: [e.value for e in obj]), nullable=False
+    )
     model_name: Mapped[str] = mapped_column(String(100), nullable=False)
 
     # Prompt & Response
@@ -40,7 +42,10 @@ class AIInteraction(Base):
     assistant_response: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Security Research Fields
-    threat_category: Mapped[ThreatCategory] = mapped_column(Enum(ThreatCategory), default=ThreatCategory.NONE)
+    threat_category: Mapped[ThreatCategory] = mapped_column(
+        Enum(ThreatCategory, values_callable=lambda obj: [e.value for e in obj]),
+        default=ThreatCategory.NONE
+    )
     is_adversarial: Mapped[bool] = mapped_column(Boolean, default=False)
     safety_triggered: Mapped[bool] = mapped_column(Boolean, default=False)  # Did the model refuse?
     researcher_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

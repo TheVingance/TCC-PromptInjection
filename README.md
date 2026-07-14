@@ -152,6 +152,36 @@ O frontend foi desenvolvido em **HTML5, Vanilla CSS e Javascript puro** para max
 
 ---
 
+## 🧪 Testes Automatizados de Segurança com Promptfoo
+
+O **FinSecAI** integra-se nativamente com o framework **Promptfoo** para permitir a execução automatizada de testes adversariais contra o assistente conversacional. 
+
+### 1. Funcionamento da Integração
+Como a nossa API de chat exige autenticação JWT para garantir a segurança e a auditoria apropriada dos acessos, o fluxo do Promptfoo está estruturado da seguinte forma:
+*   **Provedor Personalizado ([promptfoo_provider.py](file:///C:/Users/triches/Documents/ProjetoTCC/scripts/promptfoo_provider.py)):** Um script Python desenvolvido com a biblioteca padrão (sem dependências externas) que faz o login automático como pesquisador (`researcher@finsecai.test`), obtém o JWT token e encaminha a requisição do Promptfoo com o cabeçalho `Authorization: Bearer <token>` para o endpoint do backend.
+*   **Receita de Teste ([promptfoo.yaml](file:///C:/Users/triches/Documents/ProjetoTCC/promptfoo.yaml)):** Um arquivo de especificação declarativa contendo casos de teste pré-definidos para avaliar vulnerabilidades como injeção de prompt direta, vazamento de regras do sistema e tentativas de realizar transações financeiras de forma não autorizada.
+
+### 2. Executando os Testes do Promptfoo
+Para rodar a avaliação adversarial automatizada localmente:
+
+1.  Certifique-se de que os contêineres Docker do backend e banco estejam em execução (`docker-compose up -d`).
+2.  Instale as dependências locais (caso ainda não o tenha feito):
+    ```bash
+    npm install
+    ```
+3.  Execute os testes apontando para o arquivo de configuração:
+    ```bash
+    npx promptfoo eval -c promptfoo.yaml --no-cache
+    ```
+4.  Visualize a tabela comparativa de desempenho diretamente no terminal ou inicie a interface interativa do Promptfoo para analisar detalhadamente cada asserção:
+    ```bash
+    npx promptfoo view
+    ```
+
+Todas as interações efetuadas pelo Promptfoo são persistidas no PostgreSQL com a flag `is_adversarial = true` e a categoria de ameaça correspondente, populando automaticamente o dashboard de pesquisa científica do sistema.
+
+---
+
 ## 🚀 Como Executar o Ambiente Completo
 
 ### 1. Variáveis de Ambiente

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ─────────────────────────────────────────
   # PostgreSQL Database
@@ -16,11 +14,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "5433:5432" # host:container — evita conflito com Postgres local
     networks:
       - fin_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finuser} -d ${POSTGRES_DB:-findb}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finuser} -d ${POSTGRES_DB:-findb}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,11 +26,11 @@ services:
   # ─────────────────────────────────────────
   # FastAPI Backend
   # ─────────────────────────────────────────
-  api:
+  api_v2:
     build:
       context: ./app
       dockerfile: Dockerfile
-    container_name: fin_api
+    container_name: fin_api_v2
     restart: always
     env_file:
       - .env
@@ -47,8 +45,9 @@ services:
       - fin_network
     volumes:
       - ./app:/app
+      - ./scripts:/app/scripts # seed_data.py acessível dentro do container
     command: >
-      sh -c "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "python scripts/wait_for_db.py && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 
   # ─────────────────────────────────────────
   # Frontend (Simple Web UI)
@@ -62,7 +61,7 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - api
+      - api_v2
     networks:
       - fin_network
 
@@ -74,7 +73,7 @@ services:
     container_name: fin_pgadmin
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@fin.local}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@finsecai.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-adminpass}
     ports:
       - "5050:80"

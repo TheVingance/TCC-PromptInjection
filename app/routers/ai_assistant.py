@@ -43,6 +43,7 @@ async def chat(
         user_message=data.message,
         session_id=session_id,
         provider=data.provider,
+        model_name=data.model_name,
         custom_system_prompt=data.system_prompt,
         is_adversarial=data.is_adversarial,
         threat_category=data.threat_category,

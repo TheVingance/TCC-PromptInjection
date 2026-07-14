@@ -46,7 +46,10 @@ def call_api(prompt, options, context):
         provider = config.get("provider", "gemini")
         model_name = config.get("model_name", None)
         is_adversarial = config.get("is_adversarial", True)
-        threat_category = config.get("threat_category", "prompt_injection")
+        
+        # Resolve a categoria dinâmica a partir das variáveis do caso de teste
+        vars_dict = context.get("vars", {}) if isinstance(context, dict) else {}
+        threat_category = vars_dict.get("category") or config.get("threat_category", "prompt_injection")
         
         url = f"{API_BASE_URL}/ai/chat"
         payload_dict = {

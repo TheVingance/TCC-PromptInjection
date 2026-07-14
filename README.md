@@ -78,7 +78,8 @@ A persistência é estruturada para rastrear transações bancárias tradicionai
 *   **`audit_logs`**: Logs detalhados e imutáveis de ações críticas do sistema para fins de auditoria de segurança.
 *   **`ai_interactions`**: **A tabela central da pesquisa**. Registra cada interação com as LLMs, contendo:
     *   `session_id`: Rastreamento da sessão de chat.
-    *   `provider`: Qual LLM respondeu (Ollama, DeepSeek, Gemini).
+    *   `provider`: Provedor utilizado (padrão: ollama).
+    *   `model_name`: Nome do modelo local utilizado (llama3.1:latest, deepseek-r1:latest, etc.).
     *   `user_prompt` e `assistant_response`.
     *   `is_adversarial` (Flag booleana indicando se era um teste de ataque).
     *   `threat_category` (Classificação da ameaça: jailbreak, data_extraction, priv_esc, prompt_injection).
@@ -99,13 +100,13 @@ A persistência é estruturada para rastrear transações bancárias tradicionai
 
 O FinSecAI centraliza o fluxo conversacional no **`ai_service.py`**, atuando como um roteador dinâmico entre múltiplos provedores com **temperatura configurada para 0** para assegurar a consistência dos experimentos.
 
-### 1. Provedores Suportados e Modelos Utilizados
+### 1. Modelos Utilizados
+
+Todos os testes e avaliações do FinSecAI são executados utilizando **modelos locais de código aberto** orquestrados pelo **Ollama**:
 
 | Provedor | Modelos Utilizados | Canal de Acesso | Objetivo |
 | :--- | :--- | :--- | :--- |
 | **Ollama (Local)** | `llama3.1:latest`, `deepseek-r1:latest`, `gemma4:latest`, `llama3:8b` | Conector local via `http://host.docker.internal:11434` | Testes locais offline com modelos de código aberto de diferentes tamanhos e arquiteturas. |
-| **DeepSeek (Nuvem)** | `deepseek-chat` (V3) | SDK OpenAI compatível com API oficial | Avaliação de modelos proprietários modernos de baixo custo com capacidades avançadas de raciocínio. |
-| **Google Gemini (Nuvem)** | `gemini-2.5-flash` | SDK oficial `google-generativeai` | Testes com modelos de fronteira de alta performance comercial e ampla janela de contexto. |
 
 #### Lista de Modelos Locais Disponíveis (Ollama List)
 ```text
@@ -146,7 +147,8 @@ Em vez de definir uma LLM fixa para toda a plataforma, a requisição HTTP aceit
 POST /api/v1/ai/chat
 {
   "message": "Qual é o saldo da conta corrente?",
-  "provider": "gemini",  # ou "ollama", "deepseek"
+  "provider": "ollama",
+  "model_name": "llama3.1:latest",
   "is_adversarial": true,
   "threat_category": "jailbreak"
 }
@@ -224,11 +226,6 @@ Crie um arquivo `.env` a partir do `.env.example` na raiz do projeto:
 ```bash
 cp .env.example .env
 ```
-Configure suas credenciais API caso pretenda utilizar os modelos de produção:
-```env
-DEEPSEEK_API_KEY=sua-chave-aqui
-GEMINI_API_KEY=sua-chave-aqui
-```
 
 ### 2. Inicialização dos Containers
 Execute o comando a seguir para construir e levantar toda a infraestrutura:
@@ -256,7 +253,7 @@ docker-compose exec api_v2 python scripts/seed_data.py
 
 Para gerar relatórios e alimentar artigos acadêmicos ou relatórios de TCC:
 1. Faça login na interface com as credenciais do pesquisador (`researcher@finsecai.test` / `research@2026`).
-2. Envie seus prompts adversariais selecionando o modelo (Ollama / Gemini / DeepSeek).
+2. Envie seus prompts adversariais selecionando o modelo local rodando via Ollama (ex: llama3.1, deepseek-r1, gemma4 ou llama3).
 3. Marque a flag de ataque, defina a categoria de ameaça (ex: `jailbreak` ou `financial_fraud`) e registre o comportamento observado.
 4. Para exportar todos os dados coletados de forma formatada para análise de dados (Python Pandas, R, etc.), consuma o endpoint de exportação:
 

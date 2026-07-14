@@ -98,8 +98,6 @@ O FinSecAI centraliza o fluxo conversacional no **`ai_service.py`**, atuando com
 | Provedor | Modelos Utilizados | Canal de Acesso | Objetivo |
 | :--- | :--- | :--- | :--- |
 | **Ollama (Local)** | `llama3.1:latest`, `deepseek-r1:latest`, `gemma4:latest`, `llama3:8b` | Conector local via `http://host.docker.internal:11434` | Testes locais offline com modelos de código aberto de diferentes tamanhos e arquiteturas. |
-| **DeepSeek (Nuvem)** | `deepseek-chat` (V3) | SDK OpenAI compatível com API oficial | Avaliação de modelos proprietários modernos de baixo custo com capacidades avançadas de raciocínio. |
-| **Google Gemini (Nuvem)** | `gemini-2.5-flash` | SDK oficial `google-generativeai` | Testes com modelos de fronteira de alta performance comercial e ampla janela de contexto. |
 
 #### Lista de Modelos Locais (Ollama List)
 Os modelos locais configurados para os testes adversariais são:

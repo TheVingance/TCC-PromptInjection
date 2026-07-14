@@ -1,0 +1,233 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from models.account import Account, AccountStatus
+from models.transaction import Transaction, TransactionType, TransactionStatus
+from models.investment import Investment
+from models.loan import Loan
+from models.user import User
+import json
+
+async def consultar_saldo(db: AsyncSession, user_id: int, account_number: str) -> str:
+    """
+    Consulta o saldo de uma conta bancária específica do usuário logado.
+    
+    Args:
+        db: Sessão assíncrona do banco de dados.
+        user_id: ID do usuário autenticado.
+        account_number: Número da conta a ser consultada (ex: '12345678-9').
+    """
+    result = await db.execute(select(Account).where(Account.account_number == account_number))
+    account = result.scalar_one_or_none()
+    if not account:
+        return "Erro: Conta não encontrada."
+    
+    # Lógica de Permissão
+    if account.user_id != user_id:
+        return "Erro de Permissão: Você não tem autorização para consultar o saldo desta conta."
+        
+    return f"Conta: {account.account_number} | Tipo: {account.account_type.value} | Saldo: R$ {account.balance:.2f} | Status: {account.status.value}"
+
+async def listar_transacoes(db: AsyncSession, user_id: int, account_number: str, limit: int = 10) -> str:
+    """
+    Lista o histórico recente de transações de uma conta bancária específica do usuário logado.
+    
+    Args:
+        db: Sessão assíncrona do banco de dados.
+        user_id: ID do usuário autenticado.
+        account_number: Número da conta (ex: '12345678-9').
+        limit: Quantidade máxima de transações a retornar.
+    """
+    result = await db.execute(select(Account).where(Account.account_number == account_number))
+    account = result.scalar_one_or_none()
+    if not account:
+        return "Erro: Conta não encontrada."
+        
+    # Lógica de Permissão
+    if account.user_id != user_id:
+        return "Erro de Permissão: Você não tem autorização para listar as transações desta conta."
+        
+    tx_result = await db.execute(
+        select(Transaction)
+        .where((Transaction.from_account_id == account.id) | (Transaction.to_account_id == account.id))
+        .order_by(Transaction.created_at.desc())
+        .limit(limit)
+    )
+    transactions = tx_result.scalars().all()
+    if not transactions:
+        return f"Nenhuma transação encontrada para a conta {account_number}."
+        
+    lines = [f"Histórico de transações para a conta {account_number}:"]
+    for t in transactions:
+        dir_str = "Saída" if t.from_account_id == account.id else "Entrada"
+        ref = f" (Ref: {t.reference_id})" if t.reference_id else ""
+        lines.append(
+            f"- {t.created_at.strftime('%Y-%m-%d %H:%M:%S')} | {t.transaction_type.value.upper()} | "
+            f"Valor: R$ {t.amount:.2f} | Fluxo: {dir_str} | Status: {t.status.value} | Descrição: {t.description}{ref}"
+        )
+    return "\n".join(lines)
+
+async def gerar_resumo_financeiro(db: AsyncSession, user_id: int) -> str:
+    """
+    Gera um resumo consolidado de toda a saúde financeira do usuário logado,
+    incluindo saldos de contas, investimentos e empréstimos ativos.
+    
+    Args:
+        db: Sessão assíncrona do banco de dados.
+        user_id: ID do usuário autenticado.
+    """
+    acc_result = await db.execute(select(Account).where(Account.user_id == user_id))
+    accounts = acc_result.scalars().all()
+    
+    loan_result = await db.execute(select(Loan).where(Loan.user_id == user_id))
+    loans = loan_result.scalars().all()
+    
+    summary = ["=== RESUMO FINANCEIRO CONSOLIDADO ==="]
+    
+    if not accounts:
+        summary.append("Nenhuma conta bancária encontrada.")
+    else:
+        summary.append("\nContas:")
+        total_balance = 0.0
+        for acc in accounts:
+            summary.append(f"- Conta: {acc.account_number} ({acc.account_type.value}) | Saldo: R$ {acc.balance:.2f} | Status: {acc.status.value}")
+            total_balance += float(acc.balance)
+            
+            inv_result = await db.execute(select(Investment).where(Investment.account_id == acc.id))
+            investments = inv_result.scalars().all()
+            if investments:
+                summary.append("  Investimentos:")
+                for inv in investments:
+                    summary.append(f"    * {inv.ticker} ({inv.name}) | Qtd: {inv.quantity} | Preço Médio: R$ {inv.average_price:.2f} | Atual: R$ {inv.current_price:.2f}")
+        summary.append(f"Saldo Consolidado Total: R$ {total_balance:.2f}")
+        
+    if loans:
+        summary.append("\nEmpréstimos Contratados:")
+        for l in loans:
+            summary.append(f"- ID: {l.id} | Valor Solicitado: R$ {l.requested_amount:.2f} | Aprovado: R$ {l.approved_amount or 0.0:.2f} | Saldo Devedor: R$ {l.outstanding_balance or 0.0:.2f} | Status: {l.status.value}")
+            
+    return "\n".join(summary)
+
+async def alterar_saldo(db: AsyncSession, user_id: int, account_number: str, amount: float, description: str = "Ajuste manual") -> str:
+    """
+    Executa um ajuste de saldo na conta do usuário logado (simulando um depósito se amount > 0 ou saque se amount < 0).
+    
+    Args:
+        db: Sessão assíncrona do banco de dados.
+        user_id: ID do usuário autenticado.
+        account_number: Número da conta a ser ajustada.
+        amount: Valor numérico a somar (positivo) ou subtrair (negativo) do saldo.
+        description: Descrição da transação gerada.
+    """
+    result = await db.execute(select(Account).where(Account.account_number == account_number))
+    account = result.scalar_one_or_none()
+    if not account:
+        return "Erro: Conta não encontrada."
+        
+    # Lógica de Permissão
+    if account.user_id != user_id:
+        return "Erro de Permissão: Você não tem autorização para alterar o saldo desta conta."
+        
+    if account.status != AccountStatus.ACTIVE:
+        return f"Erro: A conta está {account.status.value} e não pode sofrer alterações de saldo."
+        
+    new_balance = float(account.balance) + amount
+    if new_balance < 0:
+        return f"Erro: Saldo insuficiente. O saldo atual é R$ {account.balance:.2f} e o ajuste solicitado foi de R$ {amount:.2f}."
+        
+    account.balance = new_balance
+    tx_type = TransactionType.DEPOSIT if amount >= 0 else TransactionType.WITHDRAWAL
+    tx = Transaction(
+        from_account_id=account.id if amount < 0 else None,
+        to_account_id=account.id if amount >= 0 else None,
+        transaction_type=tx_type,
+        amount=abs(amount),
+        description=description,
+        status=TransactionStatus.COMPLETED
+    )
+    db.add(tx)
+    await db.flush()
+    return f"Sucesso: Saldo ajustado com sucesso. Novo saldo da conta {account_number}: R$ {account.balance:.2f}. Transação {tx.id} registrada."
+
+async def exportar_dados(db: AsyncSession, user_id: int) -> str:
+    """
+    Exporta todo o histórico financeiro e cadastral do usuário logado em formato JSON formatado.
+    
+    Args:
+        db: Sessão assíncrona do banco de dados.
+        user_id: ID do usuário autenticado.
+    """
+    user_result = await db.execute(select(User).where(User.id == user_id))
+    user = user_result.scalar_one_or_none()
+    if not user:
+        return "Erro: Usuário não encontrado."
+        
+    acc_result = await db.execute(select(Account).where(Account.user_id == user_id))
+    accounts = acc_result.scalars().all()
+    
+    loan_result = await db.execute(select(Loan).where(Loan.user_id == user_id))
+    loans = loan_result.scalars().all()
+    
+    export_payload = {
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "cpf": user.cpf,
+            "is_active": user.is_active,
+            "created_at": user.created_at.isoformat() if user.created_at else None
+        },
+        "accounts": []
+    }
+    
+    for acc in accounts:
+        tx_result = await db.execute(
+            select(Transaction)
+            .where((Transaction.from_account_id == acc.id) | (Transaction.to_account_id == acc.id))
+        )
+        transactions = tx_result.scalars().all()
+        
+        inv_result = await db.execute(select(Investment).where(Investment.account_id == acc.id))
+        investments = inv_result.scalars().all()
+        
+        acc_data = {
+            "id": acc.id,
+            "account_number": acc.account_number,
+            "agency": acc.agency,
+            "account_type": acc.account_type.value,
+            "balance": float(acc.balance),
+            "status": acc.status.value,
+            "transactions": [
+                {
+                    "id": t.id,
+                    "type": t.transaction_type.value,
+                    "amount": float(t.amount),
+                    "status": t.status.value,
+                    "description": t.description,
+                    "created_at": t.created_at.isoformat() if t.created_at else None
+                } for t in transactions
+            ],
+            "investments": [
+                {
+                    "id": i.id,
+                    "ticker": i.ticker,
+                    "name": i.name,
+                    "quantity": float(i.quantity),
+                    "average_price": float(i.average_price),
+                    "current_price": float(i.current_price)
+                } for i in investments
+            ]
+        }
+        export_payload["accounts"].append(acc_data)
+        
+    export_payload["loans"] = [
+        {
+            "id": l.id,
+            "requested_amount": float(l.requested_amount),
+            "approved_amount": float(l.approved_amount) if l.approved_amount else None,
+            "outstanding_balance": float(l.outstanding_balance) if l.outstanding_balance else None,
+            "status": l.status.value,
+            "purpose": l.purpose
+        } for l in loans
+    ]
+    
+    return json.dumps(export_payload, indent=2, ensure_ascii=False)

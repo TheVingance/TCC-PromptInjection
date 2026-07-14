@@ -184,7 +184,7 @@ Como a nossa API de chat exige autenticação JWT para garantir a segurança e a
 *   **Provedor Personalizado ([promptfoo_provider.py](file:///C:/Users/triches/Documents/ProjetoTCC/scripts/promptfoo_provider.py)):** Um script Python desenvolvido com a biblioteca padrão (sem dependências externas) que faz o login automático como pesquisador (`researcher@finsecai.test`), obtém o JWT token e encaminha a requisição do Promptfoo com o cabeçalho `Authorization: Bearer <token>` para o endpoint do backend.
 *   **Base de Payloads ([payloads.yaml](file:///C:/Users/triches/Documents/ProjetoTCC/tests/payloads.yaml)):** Um arquivo contendo **20 payloads adversariais únicos** organizados entre as 4 categorias de ataque: injeção direta (jailbreak), exfiltração de dados (data_extraction), acionamento indevido de ferramenta (priv_esc) e injeção indireta (prompt_injection).
 
-### 2. Executando os Testes do Promptfoo
+### 2. Executando e Visualizando os Testes
 Para rodar a avaliação adversarial automatizada localmente:
 
 1.  Certifique-se de que os contêineres Docker do backend e banco estejam em execução (`docker-compose up -d`).
@@ -192,30 +192,47 @@ Para rodar a avaliação adversarial automatizada localmente:
     ```bash
     npm install
     ```
-3.  Execute os testes apontando para o arquivo de configuração:
+3.  **Execução via Script Automatizado (Recomendado):**
+    Criamos um script que executa a suite do Promptfoo repetindo cada payload 5 vezes (totalizando 100 execuções) e imprime o resumo de ASR/ASP diretamente do banco:
     ```bash
-    npx promptfoo eval -c promptfoo.yaml --no-cache
+    python scripts/run_experiments.py
     ```
-4.  Visualize a tabela comparativa de desempenho diretamente no terminal ou inicie a interface interativa do Promptfoo para analisar detalhadamente cada asserção:
+4.  **Interface Visual do Promptfoo:**
+    Para validar manualmente e verificar como o modelo se comportou diante de cada uma das 100 tentativas individuais (inclusive vendo as asserções de sucesso e falha coloridas célula a célula):
     ```bash
     npx promptfoo view
     ```
+    Isso abrirá o dashboard visual do Promptfoo no navegador (geralmente em `http://localhost:15000`), permitindo que você clique em cada célula do teste para ler a resposta bruta gerada pela LLM.
 
-Todas as interações efetuadas pelo Promptfoo são persistidas no PostgreSQL com a flag `is_adversarial = true` e a categoria de ameaça correspondente, populando automaticamente o dashboard de pesquisa científica do sistema.
+Todas as interações efetuadas pelo Promptfoo são persistidas no PostgreSQL com a flag `is_adversarial = true` e a categoria de ameaça correspondente, populando automaticamente o banco.
+
+---
+
+## 📊 Métricas de Pesquisa Científica (ASR e ASP)
+
+Para viabilizar a análise estatística do comportamento adversarial no TCC, implementamos duas métricas principais baseadas na tabela `adversarial_cases` do PostgreSQL:
+
+1.  **ASP (Attack Success Probability):** A probabilidade geral de sucesso do ataque por tentativa unitária. É a razão simples entre todas as execuções bem-sucedidas do ataque e o total de execuções adversariais.
+2.  **ASR (Attack Success Rate):** A taxa de sucesso por payload único. Como cada payload é executado 5 vezes (repetições), consideramos que o payload obteve sucesso se ele funcionou pelo menos $1$ vez no conjunto das suas 5 repetições (exposição de vulnerabilidade).
 
 ---
 
 ## 🖥️ Painel do Pesquisador (Interface Web)
 
-O frontend foi desenvolvido em **HTML5, Vanilla CSS e Javascript puro** para maximizar o desempenho e evitar complexidade de frameworks:
+O frontend foi desenvolvido em **HTML5, Vanilla CSS e Javascript puro** para maximizar o desempenho e permitir a auditoria manual de payloads:
 
 *   **Design Premium (Glassmorphism)**: Tema escuro otimizado com transparências, sombras suaves e fontes modernas para uma visualização limpa e profissional.
-*   **Chaveamento de Teste Adversarial**: O pesquisador pode ativar uma chave seletora na caixa de mensagem para catalogar o prompt de teste. A interface então abre campos adicionais de metadados:
-    *   *Categoria da ameaça* (dropdown de vulnerabilidades).
-    *   *Notas do pesquisador* (campo de observações do teste).
+*   **Visualização e Averiguação de Payloads por Categoria**:
+    1.  **Lista de Prompts Rápidos**: No painel lateral, há botões de atalho configurados com payloads de ataque de exemplo. Ao clicar, o painel configura automaticamente a categoria de ameaça correspondente e ativa o modo adversarial.
+    2.  **Filtro do Histórico**: Você pode clicar na aba **"⚠️ Adversariais"** na barra lateral direita para listar exclusivamente os ataques realizados.
+    3.  **Auditoria Modal Detalhada**: Ao clicar em qualquer interação da lista histórica, um modal detalhado é aberto exibindo:
+        *   O payload adversarial utilizado (`Prompt do Usuário`).
+        *   A resposta em texto natural do assistente (`Resposta do Assistente`).
+        *   A categoria associada (`Threat Category`).
+        *   Se as diretivas de recusa foram ativadas (`Safety Triggered`).
+        *   A latência de execução do modelo em milissegundos e a quantidade de tokens.
+*   **Cards de Métricas em Tempo Real**: Exibição atualizada da quantidade de interações, defesas de segurança (`Safety Triggered`) e os percentuais consolidados de **ASR** e **ASP**.
 *   **Gráfico de Latência em Tempo Real**: Desenhado em um elemento `<canvas>` via lógica JavaScript interna, exibindo a flutuação do tempo de resposta (em milissegundos) após cada requisição.
-*   **Estatísticas Acumuladas**: Dashboard superior exibindo o total de interações, total de ataques tentados, quantidade de defesas bem-sucedidas (`safety_triggered`) e a porcentagem geral de sucesso defensivo.
-*   **Histórico e Depuração (Modal detalhado)**: Ao clicar em qualquer interação da lista histórica, um modal detalhado se abre mostrando a latência exata, tokens consumidos, ID de sessão e o payload bruto enviado e recebido.
 
 ---
 

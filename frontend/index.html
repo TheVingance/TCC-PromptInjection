@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=1.1" />
 </head>
 <body>
   <!-- Animated background -->
@@ -24,9 +24,15 @@
         <span class="logo-text">FinSec<span class="logo-accent">AI</span></span>
         <span class="logo-badge">RESEARCH</span>
       </div>
-      <div class="header-status" id="connectionStatus">
-        <span class="status-dot"></span>
-        <span class="status-text">Conectando...</span>
+      <div class="header-right">
+        <div class="header-status" id="connectionStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">Conectando...</span>
+        </div>
+        <button class="btn-theme-toggle" id="btnThemeToggle" title="Alternar tema claro/escuro">
+          <span class="theme-icon" id="themeIcon">🌙</span>
+          <span id="themeLabel">Modo Escuro</span>
+        </button>
       </div>
     </div>
   </header>
@@ -272,6 +278,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=1.1"></script>
 </body>
 </html>

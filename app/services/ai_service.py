@@ -207,6 +207,11 @@ async def _chat_ollama(
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         resp = await client.post(url, json=payload)
+        # Se o modelo do Ollama não suportar nativamente chamadas de ferramentas (ex: Llama 3 8b),
+        # a requisição retornará 400. Retentamos sem ferramentas para manter a compatibilidade.
+        if resp.status_code == 400 and "tools" in payload:
+            payload.pop("tools", None)
+            resp = await client.post(url, json=payload)
         resp.raise_for_status()
         data = resp.json()
 

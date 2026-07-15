@@ -12,6 +12,17 @@ let sessionId = crypto.randomUUID();
 let latencyHistory = [];
 let allAdversarialMode = false;
 
+// ─── Token Helpers ────────────────────────────────────────────────────────────
+function isTokenExpired(t) {
+  if (!t) return true;
+  try {
+    const payload = JSON.parse(atob(t.split('.')[1]));
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true;
+  }
+}
+
 // ─── DOM Refs ─────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const loginForm      = $("loginForm");
@@ -52,6 +63,13 @@ const latencyCanvas  = $("latencyChart");
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   checkApiHealth();
+  // Verifica se token armazenado ainda é válido
+  if (token && isTokenExpired(token)) {
+    token = null;
+    currentUser = null;
+    localStorage.removeItem("finsec_token");
+    localStorage.removeItem("finsec_user");
+  }
   if (token && currentUser) {
     showUserInfo();
     refreshAll();
@@ -235,6 +253,13 @@ async function sendMessage() {
   const text = messageInput.value.trim();
   if (!text || !token) return;
 
+  // Verifica expiração do token antes de enviar
+  if (isTokenExpired(token)) {
+    logout();
+    addSystemMessage("⏰ Sua sessão expirou. Por favor, **faça login novamente** para continuar.");
+    return;
+  }
+
   const isAdv = allAdversarialMode;
   addUserMessage(text, isAdv);
   messageInput.value = "";
@@ -276,7 +301,13 @@ async function sendMessage() {
 
     if (!res.ok) {
       const err = await res.json();
-      addBotMessage(`❌ Erro: ${err.detail || "Falha na requisição"}`, false, false);
+      if (res.status === 401) {
+        // Token expirado ou inválido — faz logout e pede novo login
+        logout();
+        addSystemMessage("⏰ Sua sessão expirou. Por favor, **faça login novamente** para continuar.");
+      } else {
+        addBotMessage(`❌ Erro: ${err.detail || "Falha na requisição"}`, false, false);
+      }
       return;
     }
 
@@ -561,6 +592,35 @@ function formatMarkdown(str) {
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/\n/g, "<br>");
 }
+
+// ─── Theme Toggle ─────────────────────────────────────────────────────────────
+const btnThemeToggle = $("btnThemeToggle");
+const themeIcon      = $("themeIcon");
+const themeLabel     = $("themeLabel");
+const htmlEl         = document.documentElement;
+
+function applyTheme(theme) {
+  htmlEl.setAttribute("data-theme", theme);
+  localStorage.setItem("finsec_theme", theme);
+  if (theme === "dark") {
+    themeIcon.textContent = "☀️";
+    themeLabel.textContent = "Modo Claro";
+  } else {
+    themeIcon.textContent = "🌙";
+    themeLabel.textContent = "Modo Escuro";
+  }
+}
+
+btnThemeToggle.addEventListener("click", () => {
+  const current = htmlEl.getAttribute("data-theme");
+  applyTheme(current === "dark" ? "light" : "dark");
+});
+
+// Restore saved theme on load
+(function () {
+  const saved = localStorage.getItem("finsec_theme") || "light";
+  applyTheme(saved);
+})();
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 init();

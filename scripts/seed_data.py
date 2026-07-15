@@ -7,6 +7,7 @@ import random
 from datetime import datetime, timedelta, timezone
 
 from faker import Faker
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 import sys
@@ -48,6 +49,10 @@ async def seed():
     Session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with Session() as db:
+        print("🧹 Limpando dados antigos (Truncate)...")
+        await db.execute(text("TRUNCATE TABLE audit_logs, adversarial_cases, ai_interactions, transactions, investments, loans, accounts, users CASCADE;"))
+        await db.commit()
+
         print("🌱 Criando usuários fictícios...")
         users = []
         for i in range(5):

@@ -47,7 +47,7 @@ services:
       - ./app:/app
       - ./scripts:/app/scripts # seed_data.py acessível dentro do container
     command: >
-      sh -c "python scripts/wait_for_db.py && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+      sh -c "chmod +x /app/scripts/wait_for_db.py && python /app/scripts/wait_for_db.py && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
 
   # ─────────────────────────────────────────
   # Frontend (Simple Web UI)

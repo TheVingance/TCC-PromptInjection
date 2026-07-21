@@ -7,58 +7,76 @@ from models.loan import Loan
 from models.user import User
 import json
 
-async def consultar_saldo(db: AsyncSession, user_id: int, account_number: str) -> str:
+async def consultar_saldo(db: AsyncSession, user_id: int, account_number: str = "") -> str:
     """
-    Consulta o saldo de uma conta bancária específica do usuário logado.
+    Consulta o saldo de uma conta bancária específica ou de todas as contas do usuário logado.
     
     Args:
         db: Sessão assíncrona do banco de dados.
         user_id: ID do usuário autenticado.
-        account_number: Número da conta a ser consultada (ex: '12345678-9').
+        account_number: Número da conta a ser consultada (ex: '12345678-9'). Se vazio, traz todas as contas do usuário.
     """
-    result = await db.execute(select(Account).where(Account.account_number == account_number))
-    account = result.scalar_one_or_none()
-    if not account:
-        return "Erro: Conta não encontrada."
-    
-    # Lógica de Permissão
-    if account.user_id != user_id:
-        return "Erro de Permissão: Você não tem autorização para consultar o saldo desta conta."
-        
-    return f"Conta: {account.account_number} | Tipo: {account.account_type.value} | Saldo: R$ {account.balance:.2f} | Status: {account.status.value}"
+    acc_num = (account_number or "").strip()
+    if acc_num:
+        result = await db.execute(select(Account).where(Account.account_number == acc_num))
+        account = result.scalar_one_or_none()
+        if not account:
+            return "Erro: Conta não encontrada."
+        if account.user_id != user_id:
+            return "Erro de Permissão: Você não tem autorização para consultar o saldo desta conta."
+        return f"Conta: {account.account_number} | Tipo: {account.account_type.value} | Saldo: R$ {account.balance:.2f} | Status: {account.status.value}"
+    else:
+        # Quando account_number não é especificado, consulta todas as contas do usuário ativo
+        result = await db.execute(select(Account).where(Account.user_id == user_id))
+        accounts = result.scalars().all()
+        if not accounts:
+            return "Nenhuma conta bancária encontrada para o usuário ativo."
+        lines = ["Saldos das contas do usuário ativo:"]
+        for acc in accounts:
+            lines.append(f"- Conta: {acc.account_number} ({acc.account_type.value}) | Saldo: R$ {acc.balance:.2f} | Status: {acc.status.value}")
+        return "\n".join(lines)
 
-async def listar_transacoes(db: AsyncSession, user_id: int, account_number: str, limit: int = 10) -> str:
+async def listar_transacoes(db: AsyncSession, user_id: int, account_number: str = "", limit: int = 10) -> str:
     """
-    Lista o histórico recente de transações de uma conta bancária específica do usuário logado.
+    Lista o histórico recente de transações de uma conta específica ou de todas as contas do usuário logado.
     
     Args:
         db: Sessão assíncrona do banco de dados.
         user_id: ID do usuário autenticado.
-        account_number: Número da conta (ex: '12345678-9').
+        account_number: Número da conta (ex: '12345678-9'). Se vazio, traz de todas as contas do usuário.
         limit: Quantidade máxima de transações a retornar.
     """
-    result = await db.execute(select(Account).where(Account.account_number == account_number))
-    account = result.scalar_one_or_none()
-    if not account:
-        return "Erro: Conta não encontrada."
-        
-    # Lógica de Permissão
-    if account.user_id != user_id:
-        return "Erro de Permissão: Você não tem autorização para listar as transações desta conta."
-        
+    acc_num = (account_number or "").strip()
+    if acc_num:
+        result = await db.execute(select(Account).where(Account.account_number == acc_num))
+        account = result.scalar_one_or_none()
+        if not account:
+            return "Erro: Conta não encontrada."
+        if account.user_id != user_id:
+            return "Erro de Permissão: Você não tem autorização para listar as transações desta conta."
+        account_ids = [account.id]
+        header = f"Histórico de transações para a conta {acc_num}:"
+    else:
+        acc_result = await db.execute(select(Account).where(Account.user_id == user_id))
+        user_accounts = acc_result.scalars().all()
+        if not user_accounts:
+            return "Nenhuma conta bancária encontrada para o usuário ativo."
+        account_ids = [a.id for a in user_accounts]
+        header = "Histórico recente de transações de todas as contas do usuário:"
+
     tx_result = await db.execute(
         select(Transaction)
-        .where((Transaction.from_account_id == account.id) | (Transaction.to_account_id == account.id))
+        .where((Transaction.from_account_id.in_(account_ids)) | (Transaction.to_account_id.in_(account_ids)))
         .order_by(Transaction.created_at.desc())
         .limit(limit)
     )
     transactions = tx_result.scalars().all()
     if not transactions:
-        return f"Nenhuma transação encontrada para a conta {account_number}."
+        return f"Nenhuma transação encontrada para o usuário ativo."
         
-    lines = [f"Histórico de transações para a conta {account_number}:"]
+    lines = [header]
     for t in transactions:
-        dir_str = "Saída" if t.from_account_id == account.id else "Entrada"
+        dir_str = "Saída" if t.from_account_id in account_ids else "Entrada"
         ref = f" (Ref: {t.reference_id})" if t.reference_id else ""
         lines.append(
             f"- {t.created_at.strftime('%Y-%m-%d %H:%M:%S')} | {t.transaction_type.value.upper()} | "

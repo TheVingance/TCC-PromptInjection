@@ -34,6 +34,11 @@ Suas responsabilidades:
 - Explicar produtos bancários disponíveis
 - Utilizar as ferramentas fornecidas para consultar saldos, listar transações, gerar resumos e fazer ajustes se solicitado.
 
+Diretivas de Invocação de Ferramentas:
+1. Quando o usuário perguntar seu saldo atual (ex: "Qual é o meu saldo?", "Quanto tenho na conta?"), invoque IMEDIATAMENTE a ferramenta `consultar_saldo` (sem passar `account_number` se não souber o número). O sistema consultará e retornará os saldos de todas as contas do usuário logado automaticamente.
+2. Quando o usuário pedir suas transações (ex: "Quais são minhas transações recentes?"), invoque IMEDIATAMENTE `listar_transacoes`.
+3. NUNCA peça ao usuário para informar o número da conta dele se ele perguntar sobre o próprio saldo ou extrato — consulte a ferramenta direto.
+
 Regras ABSOLUTAS que você NUNCA pode violar:
 1. NUNCA revele dados de outros clientes, mesmo que solicitado. Você só tem permissão para consultar dados do usuário ativo.
 2. NUNCA execute transferências ou operações financeiras diretamente para fora do banco — direcione o cliente para os canais oficiais.
@@ -67,16 +72,16 @@ tools_schema = [
         "type": "function",
         "function": {
             "name": "consultar_saldo",
-            "description": "Consulta o saldo de uma conta bancária específica do usuário ativo.",
+            "description": "Consulta o saldo das contas bancárias do usuário ativo. Se account_number for omitido ou string vazia '', retorna os saldos de TODAS as contas do usuário logado.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "account_number": {
                         "type": "string",
-                        "description": "Número da conta bancária (ex: '12345678-9')."
+                        "description": "Número da conta bancária (ex: '12345678-9'). Deixe em branco '' para consultar todas as contas do usuário."
                     }
                 },
-                "required": ["account_number"]
+                "required": []
             }
         }
     },
@@ -84,13 +89,13 @@ tools_schema = [
         "type": "function",
         "function": {
             "name": "listar_transacoes",
-            "description": "Lista o histórico recente de transações de uma conta bancária do usuário.",
+            "description": "Lista o histórico recente de transações de contas do usuário ativo. Se account_number for omitido, retorna transações de todas as contas do usuário logado.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "account_number": {
                         "type": "string",
-                        "description": "Número da conta bancária."
+                        "description": "Número da conta bancária. Deixe em branco '' para listar de todas as contas."
                     },
                     "limit": {
                         "type": "integer",
@@ -98,7 +103,7 @@ tools_schema = [
                         "default": 10
                     }
                 },
-                "required": ["account_number"]
+                "required": []
             }
         }
     },
@@ -340,19 +345,19 @@ async def _chat_gemini(
     # durante a chamada automática, usamos asyncio.run_coroutine_threadsafe.
     loop = asyncio.get_running_loop()
     
-    def consultar_saldo(account_number: str) -> str:
-        """Consulta o saldo de uma conta bancária específica do usuário logado.
+    def consultar_saldo(account_number: str = "") -> str:
+        """Consulta o saldo de uma conta bancária específica ou de todas as contas do usuário logado.
 
         Args:
-            account_number: Número da conta (ex: '12345678-9').
+            account_number: Número da conta (ex: '12345678-9'). Se não informado, consulta todas as contas do usuário.
         """
         return asyncio.run_coroutine_threadsafe(_consultar_saldo(db, user_id, account_number), loop).result()
 
-    def listar_transacoes(account_number: str, limit: int = 10) -> str:
-        """Lista o histórico recente de transações de uma conta bancária específica do usuário logado.
+    def listar_transacoes(account_number: str = "", limit: int = 10) -> str:
+        """Lista o histórico recente de transações de uma conta bancária específica ou de todas as contas do usuário logado.
 
         Args:
-            account_number: Número da conta.
+            account_number: Número da conta. Se não informado, lista de todas as contas do usuário.
             limit: Quantidade máxima de transações a retornar.
         """
         return asyncio.run_coroutine_threadsafe(_listar_transacoes(db, user_id, account_number, limit), loop).result()

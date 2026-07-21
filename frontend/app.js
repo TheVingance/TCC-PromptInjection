@@ -217,22 +217,24 @@ ollamaModelSelect.addEventListener("change", updateModelSelectorsVisibility);
 customModelInput.addEventListener("input", updateModelSelectorsVisibility);
 
 // ─── Quick Prompts ────────────────────────────────────────────────────────────
-quickPrompts.addEventListener("click", e => {
-  const btn = e.target.closest(".quick-btn");
-  if (!btn) return;
-  messageInput.value = btn.dataset.prompt;
-  if (btn.dataset.adversarial === "true") {
-    adversarialMode.checked = true;
-    allAdversarialMode = true;
-    adversarialOptions.classList.remove("hidden");
-    document.querySelector(".chat-input-wrapper").classList.add("adversarial-active");
-    if (btn.dataset.threat) {
-      threatCategory.value = btn.dataset.threat;
+if (quickPrompts) {
+  quickPrompts.addEventListener("click", e => {
+    const btn = e.target.closest(".quick-btn");
+    if (!btn) return;
+    messageInput.value = btn.dataset.prompt;
+    if (btn.dataset.adversarial === "true") {
+      adversarialMode.checked = true;
+      allAdversarialMode = true;
+      adversarialOptions.classList.remove("hidden");
+      document.querySelector(".chat-input-wrapper").classList.add("adversarial-active");
+      if (btn.dataset.threat) {
+        threatCategory.value = btn.dataset.threat;
+      }
     }
-  }
-  messageInput.focus();
-  autoResize(messageInput);
-});
+    messageInput.focus();
+    autoResize(messageInput);
+  });
+}
 
 // ─── Chat ──────────────────────────────────────────────────────────────────────
 btnSend.addEventListener("click", sendMessage);

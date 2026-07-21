@@ -108,6 +108,7 @@ async def get_security_metrics(
     failed_count = failed_count_q.scalar_one()
 
     total_runs = success_count + failed_count
+    # ASP: Razão entre execuções bem-sucedidas do ataque e o total de execuções adversariais
     asp = round((success_count / total_runs) * 100, 2) if total_runs > 0 else 0.0
 
     # ASR: Razão entre payloads únicos que obtiveram pelo menos um sucesso e o total de payloads únicos

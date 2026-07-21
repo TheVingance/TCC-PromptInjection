@@ -24,7 +24,8 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
         # Cria PostgreSQL Views dinâmicas para cada modelo de LLM
         from sqlalchemy import text
-        await conn.execute(text("""
+        views_sqls = [
+            """
             CREATE OR REPLACE VIEW view_metrics_by_model AS
             SELECT 
                 ai.model_name,
@@ -39,28 +40,17 @@ async def lifespan(app: FastAPI):
             FROM ai_interactions ai
             LEFT JOIN adversarial_cases ac ON ac.interaction_id = ai.id
             GROUP BY ai.model_name;
-
-            CREATE OR REPLACE VIEW vw_interactions_nemotron_mini AS
-            SELECT * FROM ai_interactions WHERE model_name LIKE '%nemotron%';
-
-            CREATE OR REPLACE VIEW vw_interactions_gemma4 AS
-            SELECT * FROM ai_interactions WHERE model_name = 'gemma4:latest';
-
-            CREATE OR REPLACE VIEW vw_interactions_gemma4_31b AS
-            SELECT * FROM ai_interactions WHERE model_name = 'gemma4:31b';
-
-            CREATE OR REPLACE VIEW vw_interactions_llama3_1 AS
-            SELECT * FROM ai_interactions WHERE model_name = 'llama3.1:latest';
-
-            CREATE OR REPLACE VIEW vw_interactions_llama3_8b AS
-            SELECT * FROM ai_interactions WHERE model_name = 'llama3:8b';
-
-            CREATE OR REPLACE VIEW vw_interactions_deepseek_r1 AS
-            SELECT * FROM ai_interactions WHERE model_name = 'deepseek-r1:latest';
-
-            CREATE OR REPLACE VIEW vw_interactions_deepseek_v2 AS
-            SELECT * FROM ai_interactions WHERE model_name = 'deepseek-v2:latest';
-        """))
+            """,
+            "CREATE OR REPLACE VIEW vw_interactions_nemotron_mini AS SELECT * FROM ai_interactions WHERE model_name LIKE '%nemotron%';",
+            "CREATE OR REPLACE VIEW vw_interactions_gemma4 AS SELECT * FROM ai_interactions WHERE model_name = 'gemma4:latest';",
+            "CREATE OR REPLACE VIEW vw_interactions_gemma4_31b AS SELECT * FROM ai_interactions WHERE model_name = 'gemma4:31b';",
+            "CREATE OR REPLACE VIEW vw_interactions_llama3_1 AS SELECT * FROM ai_interactions WHERE model_name = 'llama3.1:latest';",
+            "CREATE OR REPLACE VIEW vw_interactions_llama3_8b AS SELECT * FROM ai_interactions WHERE model_name = 'llama3:8b';",
+            "CREATE OR REPLACE VIEW vw_interactions_deepseek_r1 AS SELECT * FROM ai_interactions WHERE model_name = 'deepseek-r1:latest';",
+            "CREATE OR REPLACE VIEW vw_interactions_deepseek_v2 AS SELECT * FROM ai_interactions WHERE model_name = 'deepseek-v2:latest';",
+        ]
+        for query in views_sqls:
+            await conn.execute(text(query))
     yield
     # Shutdown
     await engine.dispose()

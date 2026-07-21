@@ -1,6 +1,6 @@
-# FinSecAI — Segurança de Assistentes Financeiros sob Estresse Adversarial
+# ANÁLISE DE VULNERABILIDADES DE PROMPT INJECTION EM APLICAÇÕES INTEGRADAS A LLMS
 
-Este repositório contém a implementação do **FinSecAI**, um sistema financeiro fictício isolado via contêineres Docker, desenvolvido como plataforma científica para testar a segurança e o comportamento de agentes de Inteligência Artificial (LLMs) sob injeção de prompt e outros ataques adversariais (TCC - Prompt Injection).
+Este repositório contém a implementação do **FinSecAI**, um sistema financeiro fictício isolado via contêineres Docker, desenvolvido como plataforma científica para testar a segurança e o comportamento de agentes de Inteligência Artificial (LLMs) sob injeção de prompt e outros ataques adversariais. Esse projeto é realizado como Trabalho de Conclusão de Curso para o curso de Ciência da Computação da Universidade Tecnológica Federal do Paraná (UTFPR) - Campus Medianeira. Ano de 2026.
 
 > 📘 **Guia Completo de Operação**: Veja o [`GUIA_TUTORIAL_ETAPAS.md`](/GUIA_TUTORIAL_ETAPAS.md) para um tutorial detalhado passo a passo de inicialização, carga do banco de dados, execução de experimentos e auditoria.
 
@@ -111,9 +111,14 @@ O **FinSecAI** integra-se ao framework **Promptfoo** para execução automatizad
 
 2. **Executar um Modelo Específico (100 execuções):**
    ```bash
+   # Exemplos:
    python scripts/run_experiments.py --model llama3.1:latest
    python scripts/run_experiments.py --model deepseek-r1:latest
    python scripts/run_experiments.py --model gemma4:31b
+   python scripts/run_experiments.py --model nemotron-mini:latest
+   python scripts/run_experiments.py --model deepseek-v2:latest
+   python scripts/run_experiments.py --model gemma4:latest
+   python scripts/run_experiments.py --model llama3:8b
    ```
 
 3. **Visualizar Matriz Gráfica no Navegador:**

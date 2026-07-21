@@ -19,7 +19,7 @@ router = APIRouter(prefix="/research", tags=["Pesquisa & Segurança"])
 @router.get("/audit-logs")
 async def get_audit_logs(
     limit: int = 100,
-    action: str = None,
+    action: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

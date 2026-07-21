@@ -2,7 +2,7 @@
 
 Este repositório contém a implementação do **FinSecAI**, um sistema financeiro fictício isolado via contêineres Docker, desenvolvido como plataforma científica para testar a segurança e o comportamento de agentes de Inteligência Artificial (LLMs) sob injeção de prompt e outros ataques adversariais (TCC - Prompt Injection).
 
-> 📘 **Guia Completo de Operação**: Veja o [GUIA_TUTORIAL_ETAPAS.md](file:///c:/Users/triches/Documents/ProjetoTCC/GUIA_TUTORIAL_ETAPAS.md) para um tutorial detalhado passo a passo de inicialização, carga do banco de dados, execução de experimentos e auditoria.
+> 📘 **Guia Completo de Operação**: Veja o [`GUIA_TUTORIAL_ETAPAS.md`](/GUIA_TUTORIAL_ETAPAS.md) para um tutorial detalhado passo a passo de inicialização, carga do banco de dados, execução de experimentos e auditoria.
 
 ---
 

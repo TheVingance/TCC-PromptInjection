@@ -64,6 +64,8 @@ services:
       - api_v2
     networks:
       - fin_network
+    volumes:
+      - ./frontend:/usr/share/nginx/html
 
   # ─────────────────────────────────────────
   # pgAdmin (Database Admin UI)

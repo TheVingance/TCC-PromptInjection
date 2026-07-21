@@ -59,6 +59,7 @@ const modalContent   = $("modalContent");
 const btnCloseModal  = $("btnCloseModal");
 const btnRefreshMetrics = $("btnRefreshMetrics");
 const latencyCanvas  = $("latencyChart");
+const attacksCanvas  = $("attacksChart");
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
@@ -76,6 +77,7 @@ async function init() {
   }
   updateSessionBadge();
   setupLatencyCanvas();
+  setupAttacksCanvas();
   updateModelSelectorsVisibility();
 }
 
@@ -423,6 +425,7 @@ async function fetchMetrics() {
     $("metricRate").textContent = data.safety_trigger_rate + "%";
     $("metricAsr").textContent = data.attack_success_rate + "%";
     $("metricAsp").textContent = data.attack_success_probability + "%";
+    drawAttacksChart(data);
   } catch {}
 }
 
@@ -523,6 +526,71 @@ function openInteractionModal(item) {
 
 btnCloseModal.addEventListener("click", () => modal.classList.add("hidden"));
 modal.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
+
+// ─── Attacks & Volume Chart (Canvas) ─────────────────────────────────────────
+function setupAttacksCanvas() {
+  if (!attacksCanvas) return;
+  attacksCanvas.width = attacksCanvas.parentElement.offsetWidth || 300;
+  attacksCanvas.height = 130;
+}
+
+function drawAttacksChart(m) {
+  if (!attacksCanvas) return;
+  const ctx = attacksCanvas.getContext("2d");
+  const w = attacksCanvas.width;
+  const h = attacksCanvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  if (!m) return;
+
+  const total = m.total_interactions || 0;
+  const adv = m.adversarial_interactions || 0;
+  const safe = m.safety_triggered_count || 0;
+  const succ = m.successful_attacks || 0;
+  const asr = m.attack_success_rate || 0;
+  const asp = m.attack_success_probability || 0;
+
+  const maxVal = Math.max(total, 1);
+  const bars = [
+    { label: "Total", val: total, color: "#00bcd4" },
+    { label: "Adversariais", val: adv, color: "#ffb038" },
+    { label: "Defesas (Safety)", val: safe, color: "#00d9a3" },
+    { label: "Ataques Sucesso", val: succ, color: "#ff4d6d" },
+  ];
+
+  const startY = 15;
+  const barHeight = 16;
+  const gap = 24;
+
+  bars.forEach((b, i) => {
+    const y = startY + i * gap;
+    const barWidth = Math.max((b.val / maxVal) * (w - 140), 2);
+
+    // Label
+    ctx.fillStyle = "rgba(125, 160, 187, 0.9)";
+    ctx.font = "11px Inter, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(b.label, 0, y + 12);
+
+    // Bar BG
+    ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
+    ctx.beginPath();
+    ctx.roundRect(110, y, w - 160, barHeight, 4);
+    ctx.fill();
+
+    // Bar Fill
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.roundRect(110, y, barWidth, barHeight, 4);
+    ctx.fill();
+
+    // Value Text
+    ctx.fillStyle = "rgba(240, 246, 255, 0.95)";
+    ctx.font = "bold 11px 'JetBrains Mono', monospace";
+    ctx.textAlign = "right";
+    ctx.fillText(b.val.toString(), w - 5, y + 12);
+  });
+}
 
 // ─── Latency Chart (Canvas) ───────────────────────────────────────────────────
 function setupLatencyCanvas() {

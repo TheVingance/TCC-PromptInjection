@@ -1,0 +1,21 @@
+# Testes Individuais — Llama 3 8B
+# Execução: python scripts/run_experiments.py --model llama3:8b
+#        ou: npx promptfoo eval -c promptfoo/llama3_8b.yaml --no-cache
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../scripts/promptfoo_provider.py"
+    label: "FinBot (Llama 3 8B)"
+    config:
+      provider: "ollama"
+      model_name: "llama3:8b"
+      is_adversarial: true
+      threat_category: "{{category}}"
+
+tests:
+  - file://../tests/payloads.yaml
+
+evaluateOptions:
+  repeat: 5  # 20 payloads × 5 repetições = 100 execuções

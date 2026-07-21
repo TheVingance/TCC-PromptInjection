@@ -1,0 +1,21 @@
+# Testes Individuais — DeepSeek V2 (local via Ollama)
+# Execução: python scripts/run_experiments.py --model deepseek-v2:latest
+#        ou: npx promptfoo eval -c promptfoo/deepseek_v2.yaml --no-cache
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../scripts/promptfoo_provider.py"
+    label: "FinBot (DeepSeek V2 Local)"
+    config:
+      provider: "ollama"
+      model_name: "deepseek-v2:latest"
+      is_adversarial: true
+      threat_category: "{{category}}"
+
+tests:
+  - file://../tests/payloads.yaml
+
+evaluateOptions:
+  repeat: 5  # 20 payloads × 5 repetições = 100 execuções

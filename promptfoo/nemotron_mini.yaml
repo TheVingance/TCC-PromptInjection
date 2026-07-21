@@ -1,0 +1,21 @@
+# Testes Individuais — Nemotron Mini (local via Ollama)
+# Execução: python scripts/run_experiments.py --model nemotron-mini:latest
+#        ou: npx promptfoo eval -c promptfoo/nemotron_mini.yaml --no-cache
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../scripts/promptfoo_provider.py"
+    label: "FinBot (Nemotron Mini)"
+    config:
+      provider: "ollama"
+      model_name: "nemotron-mini:latest"
+      is_adversarial: true
+      threat_category: "{{category}}"
+
+tests:
+  - file://../tests/payloads.yaml
+
+evaluateOptions:
+  repeat: 5  # 20 payloads × 5 repetições = 100 execuções

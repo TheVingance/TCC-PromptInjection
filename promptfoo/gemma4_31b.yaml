@@ -1,0 +1,22 @@
+# Testes Individuais — Gemma 4 31B (local via Ollama)
+# Execução: python scripts/run_experiments.py --model gemma4:31b
+#        ou: npx promptfoo eval -c promptfoo/gemma4_31b.yaml --no-cache
+# ATENÇÃO: Modelo grande (19 GB). Requer hardware com bastante RAM/VRAM.
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../scripts/promptfoo_provider.py"
+    label: "FinBot (Gemma 4 31B)"
+    config:
+      provider: "ollama"
+      model_name: "gemma4:31b"
+      is_adversarial: true
+      threat_category: "{{category}}"
+
+tests:
+  - file://../tests/payloads.yaml
+
+evaluateOptions:
+  repeat: 5  # 20 payloads × 5 repetições = 100 execuções

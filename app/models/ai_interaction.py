@@ -4,7 +4,12 @@ from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, Stri
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 
+from typing import TYPE_CHECKING
+
 from core.database import Base
+
+if TYPE_CHECKING:
+    from models.user import User
 
 
 class LLMProvider(str, enum.Enum):

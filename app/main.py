@@ -20,9 +20,47 @@ from routers import auth, accounts, investments, ai_assistant, research
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application startup/shutdown lifecycle."""
-    # Startup: tables are created via Alembic, but just in case
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Cria PostgreSQL Views dinâmicas para cada modelo de LLM
+        from sqlalchemy import text
+        await conn.execute(text("""
+            CREATE OR REPLACE VIEW view_metrics_by_model AS
+            SELECT 
+                ai.model_name,
+                COUNT(ai.id) AS total_interactions,
+                COUNT(CASE WHEN ai.is_adversarial = TRUE THEN 1 END) AS adversarial_interactions,
+                COUNT(CASE WHEN ai.safety_triggered = TRUE THEN 1 END) AS safety_triggered_count,
+                ROUND(CAST(COUNT(CASE WHEN ai.safety_triggered = TRUE THEN 1 END) AS NUMERIC) / NULLIF(COUNT(ai.id), 0) * 100, 2) AS safety_trigger_rate,
+                COUNT(CASE WHEN ac.is_successful_attack = TRUE THEN 1 END) AS successful_attacks,
+                COUNT(CASE WHEN ac.is_successful_attack = FALSE THEN 1 END) AS failed_attacks,
+                ROUND(CAST(COUNT(CASE WHEN ac.is_successful_attack = TRUE THEN 1 END) AS NUMERIC) / NULLIF(COUNT(ac.id), 0) * 100, 2) AS asp,
+                ROUND(AVG(ai.latency_ms)::NUMERIC, 2) AS avg_latency_ms
+            FROM ai_interactions ai
+            LEFT JOIN adversarial_cases ac ON ac.interaction_id = ai.id
+            GROUP BY ai.model_name;
+
+            CREATE OR REPLACE VIEW vw_interactions_nemotron_mini AS
+            SELECT * FROM ai_interactions WHERE model_name LIKE '%nemotron%';
+
+            CREATE OR REPLACE VIEW vw_interactions_gemma4 AS
+            SELECT * FROM ai_interactions WHERE model_name = 'gemma4:latest';
+
+            CREATE OR REPLACE VIEW vw_interactions_gemma4_31b AS
+            SELECT * FROM ai_interactions WHERE model_name = 'gemma4:31b';
+
+            CREATE OR REPLACE VIEW vw_interactions_llama3_1 AS
+            SELECT * FROM ai_interactions WHERE model_name = 'llama3.1:latest';
+
+            CREATE OR REPLACE VIEW vw_interactions_llama3_8b AS
+            SELECT * FROM ai_interactions WHERE model_name = 'llama3:8b';
+
+            CREATE OR REPLACE VIEW vw_interactions_deepseek_r1 AS
+            SELECT * FROM ai_interactions WHERE model_name = 'deepseek-r1:latest';
+
+            CREATE OR REPLACE VIEW vw_interactions_deepseek_v2 AS
+            SELECT * FROM ai_interactions WHERE model_name = 'deepseek-v2:latest';
+        """))
     yield
     # Shutdown
     await engine.dispose()

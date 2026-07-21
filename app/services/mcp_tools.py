@@ -108,7 +108,7 @@ async def gerar_resumo_financeiro(db: AsyncSession, user_id: int) -> str:
         total_balance = 0.0
         for acc in accounts:
             summary.append(f"- Conta: {acc.account_number} ({acc.account_type.value}) | Saldo: R$ {acc.balance:.2f} | Status: {acc.status.value}")
-            total_balance += float(acc.balance)
+            total_balance += acc.balance
             
             inv_result = await db.execute(select(Investment).where(Investment.account_id == acc.id))
             investments = inv_result.scalars().all()
@@ -196,13 +196,13 @@ async def exportar_dados(db: AsyncSession, user_id: int) -> str:
             "account_number": acc.account_number,
             "agency": acc.agency,
             "account_type": acc.account_type.value,
-            "balance": float(acc.balance),
+            "balance": acc.balance,
             "status": acc.status.value,
             "transactions": [
                 {
                     "id": t.id,
                     "type": t.transaction_type.value,
-                    "amount": float(t.amount),
+                    "amount": t.amount,
                     "status": t.status.value,
                     "description": t.description,
                     "created_at": t.created_at.isoformat() if t.created_at else None
@@ -213,9 +213,9 @@ async def exportar_dados(db: AsyncSession, user_id: int) -> str:
                     "id": i.id,
                     "ticker": i.ticker,
                     "name": i.name,
-                    "quantity": float(i.quantity),
-                    "average_price": float(i.average_price),
-                    "current_price": float(i.current_price)
+                    "quantity": i.quantity,
+                    "average_price": i.average_price,
+                    "current_price": i.current_price
                 } for i in investments
             ]
         }
@@ -224,9 +224,9 @@ async def exportar_dados(db: AsyncSession, user_id: int) -> str:
     export_payload["loans"] = [
         {
             "id": l.id,
-            "requested_amount": float(l.requested_amount),
-            "approved_amount": float(l.approved_amount) if l.approved_amount else None,
-            "outstanding_balance": float(l.outstanding_balance) if l.outstanding_balance else None,
+            "requested_amount": l.requested_amount,
+            "approved_amount": l.approved_amount if l.approved_amount else None,
+            "outstanding_balance": l.outstanding_balance if l.outstanding_balance else None,
             "status": l.status.value,
             "purpose": l.purpose
         } for l in loans

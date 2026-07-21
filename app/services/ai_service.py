@@ -6,10 +6,9 @@ import time
 import uuid
 import json
 import asyncio
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, cast
 
 import httpx
-from openai import AsyncOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
@@ -67,7 +66,7 @@ def _detect_safety_trigger(response: str) -> bool:
 
 # ─── MCP Tools JSON Schemas (Ollama / OpenAI) ─────────────────────────────────
 
-tools_schema = [
+tools_schema: List[Any] = [
     {
         "type": "function",
         "function": {
@@ -263,7 +262,7 @@ async def _chat_ollama(
     return text, tokens, latency_ms
 
 
-# ─── DeepSeek Provider (OpenAI-compatible) ────────────────────────────────────
+# ─── Cloud Providers (Local Ollama Fallback / No API Keys) ────────────────────
 
 async def _chat_deepseek(
     user_message: str,
@@ -272,61 +271,9 @@ async def _chat_deepseek(
     db: Optional[AsyncSession] = None,
     user_id: Optional[int] = None,
 ) -> tuple[str, Optional[int], float]:
-    start = time.time()
-    client = AsyncOpenAI(
-        api_key=settings.DEEPSEEK_API_KEY,
-        base_url=settings.DEEPSEEK_BASE_URL,
-    )
-    
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_message},
-    ]
-    
-    response = await client.chat.completions.create(
-        model=model_name or settings.DEEPSEEK_MODEL,
-        messages=messages,
-        max_tokens=2048,
-        temperature=0.0,  # Temperatura 0
-        tools=tools_schema
-    )
-    
-    latency_ms = (time.time() - start) * 1000
-    msg = response.choices[0].message
-    text = msg.content or ""
-    tool_calls = msg.tool_calls
-    tokens = response.usage.total_tokens if response.usage else None
-    
-    if tool_calls and db and user_id:
-        messages.append(msg)
-        for tool_call in tool_calls:
-            func_name = tool_call.function.name
-            func_args = json.loads(tool_call.function.arguments)
-            
-            result = await execute_tool(func_name, func_args, db, user_id)
-            
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "name": func_name,
-                "content": result
-            })
-            
-        # Segunda chamada para gerar a resposta final
-        response2 = await client.chat.completions.create(
-            model=model_name or settings.DEEPSEEK_MODEL,
-            messages=messages,
-            max_tokens=2048,
-            temperature=0.0
-        )
-        text = response2.choices[0].message.content or ""
-        if response2.usage:
-            tokens = (tokens or 0) + response2.usage.total_tokens
+    """Roteia modelos DeepSeek locais via Ollama sem necessidade de API key."""
+    return await _chat_ollama(user_message, system_prompt, model_name or "deepseek-r1:8b", db, user_id)
 
-    return text, tokens, latency_ms
-
-
-# ─── Gemini Provider ──────────────────────────────────────────────────────────
 
 async def _chat_gemini(
     user_message: str,
@@ -335,72 +282,8 @@ async def _chat_gemini(
     db: Optional[AsyncSession] = None,
     user_id: Optional[int] = None,
 ) -> tuple[str, Optional[int], float]:
-    import google.generativeai as genai
-
-    start = time.time()
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-    
-    # Criamos os wrappers locais que herdam db e user_id de forma transparente via closure.
-    # Como o SDK do Gemini executa essas chamadas em uma thread de trabalho síncrona
-    # durante a chamada automática, usamos asyncio.run_coroutine_threadsafe.
-    loop = asyncio.get_running_loop()
-    
-    def consultar_saldo(account_number: str = "") -> str:
-        """Consulta o saldo de uma conta bancária específica ou de todas as contas do usuário logado.
-
-        Args:
-            account_number: Número da conta (ex: '12345678-9'). Se não informado, consulta todas as contas do usuário.
-        """
-        return asyncio.run_coroutine_threadsafe(_consultar_saldo(db, user_id, account_number), loop).result()
-
-    def listar_transacoes(account_number: str = "", limit: int = 10) -> str:
-        """Lista o histórico recente de transações de uma conta bancária específica ou de todas as contas do usuário logado.
-
-        Args:
-            account_number: Número da conta. Se não informado, lista de todas as contas do usuário.
-            limit: Quantidade máxima de transações a retornar.
-        """
-        return asyncio.run_coroutine_threadsafe(_listar_transacoes(db, user_id, account_number, limit), loop).result()
-
-    def gerar_resumo_financeiro() -> str:
-        """Gera um resumo consolidado de contas, investimentos e empréstimos do usuário logado."""
-        return asyncio.run_coroutine_threadsafe(_gerar_resumo_financeiro(db, user_id), loop).result()
-
-    def alterar_saldo(account_number: str, amount: float, description: str) -> str:
-        """Executa um ajuste de saldo na conta do usuário logado (depósito se amount > 0, saque se amount < 0).
-
-        Args:
-            account_number: Número da conta a ser alterada.
-            amount: Valor numérico a somar ou subtrair.
-            description: Descrição da transação de ajuste.
-        """
-        return asyncio.run_coroutine_threadsafe(_alterar_saldo(db, user_id, account_number, amount, description), loop).result()
-
-    def exportar_dados() -> str:
-        """Exporta todo o histórico financeiro e cadastral do usuário logado em formato JSON."""
-        return asyncio.run_coroutine_threadsafe(_exportar_dados(db, user_id), loop).result()
-
-    model = genai.GenerativeModel(
-        model_name=model_name or settings.GEMINI_MODEL,
-        system_instruction=system_prompt,
-        tools=[consultar_saldo, listar_transacoes, gerar_resumo_financeiro, alterar_saldo, exportar_dados]
-    )
-    
-    # Executa a geração em um executor/thread separado para evitar deadlocks no event loop
-    chat = model.start_chat(enable_automatic_function_calling=True)
-    response = await asyncio.to_thread(
-        chat.send_message,
-        user_message,
-        generation_config={"temperature": 0.0}
-    )
-    
-    latency_ms = (time.time() - start) * 1000
-    text = response.text or ""
-    tokens = None
-    if hasattr(response, "usage_metadata"):
-        tokens = getattr(response.usage_metadata, "total_token_count", None)
-        
-    return text, tokens, latency_ms
+    """Roteia chamadas Gemini para o provedor Ollama local."""
+    return await _chat_ollama(user_message, system_prompt, model_name or settings.OLLAMA_MODEL, db, user_id)
 
 
 # ─── Classification Helper for Adversarial Runs ───────────────────────────────
@@ -484,12 +367,12 @@ async def process_chat(
                 user_message, sys_prompt, model_name_persisted, db, user_id
             )
         elif resolved_provider == LLMProvider.DEEPSEEK:
-            model_name_persisted = model_name or settings.DEEPSEEK_MODEL
+            model_name_persisted = model_name or getattr(settings, "DEEPSEEK_MODEL", "deepseek-chat")
             response_text, tokens, latency_ms = await _chat_deepseek(
                 user_message, sys_prompt, model_name_persisted, db, user_id
             )
         elif resolved_provider == LLMProvider.GEMINI:
-            model_name_persisted = model_name or settings.GEMINI_MODEL
+            model_name_persisted = model_name or getattr(settings, "GEMINI_MODEL", "gemini-2.5-flash")
             response_text, tokens, latency_ms = await _chat_gemini(
                 user_message, sys_prompt, model_name_persisted, db, user_id
             )

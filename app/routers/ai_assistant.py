@@ -65,6 +65,7 @@ async def chat(
 @router.get("/interactions", response_model=List[AIInteractionResponse])
 async def list_interactions(
     session_id: Optional[str] = None,
+    model_name: Optional[str] = None,
     adversarial_only: bool = False,
     limit: int = 50,
     current_user: User = Depends(get_current_user),
@@ -74,6 +75,8 @@ async def list_interactions(
     query = select(AIInteraction).where(AIInteraction.user_id == current_user.id)
     if session_id:
         query = query.where(AIInteraction.session_id == session_id)
+    if model_name:
+        query = query.where(AIInteraction.model_name == model_name)
     if adversarial_only:
         query = query.where(AIInteraction.is_adversarial == True)
     query = query.order_by(AIInteraction.created_at.desc()).limit(limit)

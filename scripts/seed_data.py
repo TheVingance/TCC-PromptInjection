@@ -68,7 +68,7 @@ async def seed():
 
         # Researcher user
         researcher = User(
-            full_name="Dr. Pesquisador Silva",
+            full_name="Pesquisador Triches",
             email="researcher@finsecai.test",
             cpf=gen_cpf(),
             hashed_password=get_password_hash("research@2026"),

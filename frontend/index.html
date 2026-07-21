@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=4.0" />
+  <link rel="stylesheet" href="style.css?v=5.0" />
 </head>
 <body>
   <!-- Animated background -->
@@ -196,6 +196,16 @@
         <div class="panel-header">
           <span class="panel-icon">📊</span>
           <h2 class="panel-title">Métricas de Segurança</h2>
+          <select id="metricsModelSelect" class="form-input form-select metrics-model-filter" title="Filtrar por modelo de LLM">
+            <option value="">🌐 Todos os Modelos</option>
+            <option value="nemotron-mini:latest">nemotron-mini:latest</option>
+            <option value="gemma4:latest">gemma4:latest</option>
+            <option value="gemma4:31b">gemma4:31b</option>
+            <option value="llama3.1:latest">llama3.1:latest</option>
+            <option value="llama3:8b">llama3:8b</option>
+            <option value="deepseek-r1:latest">deepseek-r1:latest</option>
+            <option value="deepseek-v2:latest">deepseek-v2:latest</option>
+          </select>
           <button class="refresh-btn" id="btnRefreshMetrics" title="Atualizar">↺</button>
         </div>
         <div class="metrics-grid" id="metricsGrid">
@@ -273,6 +283,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=4.0"></script>
+  <script src="app.js?v=5.0"></script>
 </body>
 </html>

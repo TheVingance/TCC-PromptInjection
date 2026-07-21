@@ -409,12 +409,18 @@ function updateSessionBadge() {
 }
 
 // ─── Metrics ──────────────────────────────────────────────────────────────────
+const metricsModelSelect = $("metricsModelSelect");
+if (metricsModelSelect) {
+  metricsModelSelect.addEventListener("change", refreshAll);
+}
 btnRefreshMetrics.addEventListener("click", refreshAll);
 
 async function fetchMetrics() {
   if (!token) return;
   try {
-    const res = await fetch(`${API_BASE}/research/metrics`, {
+    const selectedModel = metricsModelSelect ? metricsModelSelect.value : "";
+    const url = `${API_BASE}/research/metrics${selectedModel ? `?model_name=${encodeURIComponent(selectedModel)}` : ""}`;
+    const res = await fetch(url, {
       headers: { "Authorization": `Bearer ${token}` },
     });
     if (!res.ok) return;
@@ -449,7 +455,11 @@ filterAdv.addEventListener("click", () => {
 async function fetchInteractions() {
   if (!token) return;
   try {
-    const url = `${API_BASE}/ai/interactions?limit=30${showOnlyAdversarial ? "&adversarial_only=true" : ""}`;
+    const selectedModel = metricsModelSelect ? metricsModelSelect.value : "";
+    let url = `${API_BASE}/ai/interactions?limit=30${showOnlyAdversarial ? "&adversarial_only=true" : ""}`;
+    if (selectedModel) {
+      url += `&model_name=${encodeURIComponent(selectedModel)}`;
+    }
     const res = await fetch(url, {
       headers: { "Authorization": `Bearer ${token}` },
     });

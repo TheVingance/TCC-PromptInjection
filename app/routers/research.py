@@ -1,8 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text, cast, Integer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
@@ -46,54 +46,71 @@ async def get_audit_logs(
 
 @router.get("/metrics", response_model=SecurityMetrics)
 async def get_security_metrics(
+    model_name: Optional[str] = Query(None, description="Filtra métricas por modelo de LLM exato (ex: 'nemotron-mini:latest')"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Métricas agregadas de segurança das interações com o assistente IA."""
-    total_q = await db.execute(select(func.count(AIInteraction.id)))
+    """Métricas agregadas de segurança das interações com o assistente IA (geral ou filtrado por modelo)."""
+    # Total
+    total_stmt = select(func.count(AIInteraction.id))
+    if model_name:
+        total_stmt = total_stmt.where(AIInteraction.model_name == model_name)
+    total_q = await db.execute(total_stmt)
     total = total_q.scalar_one()
 
-    adv_q = await db.execute(
-        select(func.count(AIInteraction.id)).where(AIInteraction.is_adversarial == True)
-    )
+    # Adversariais
+    adv_stmt = select(func.count(AIInteraction.id)).where(AIInteraction.is_adversarial == True)
+    if model_name:
+        adv_stmt = adv_stmt.where(AIInteraction.model_name == model_name)
+    adv_q = await db.execute(adv_stmt)
     adversarial = adv_q.scalar_one()
 
-    safety_q = await db.execute(
-        select(func.count(AIInteraction.id)).where(AIInteraction.safety_triggered == True)
-    )
+    # Safety Triggered
+    safety_stmt = select(func.count(AIInteraction.id)).where(AIInteraction.safety_triggered == True)
+    if model_name:
+        safety_stmt = safety_stmt.where(AIInteraction.model_name == model_name)
+    safety_q = await db.execute(safety_stmt)
     safety_count = safety_q.scalar_one()
 
     # By provider
-    prov_q = await db.execute(
-        select(AIInteraction.provider, func.count(AIInteraction.id)).group_by(AIInteraction.provider)
-    )
+    prov_stmt = select(AIInteraction.provider, func.count(AIInteraction.id)).group_by(AIInteraction.provider)
+    if model_name:
+        prov_stmt = prov_stmt.where(AIInteraction.model_name == model_name)
+    prov_q = await db.execute(prov_stmt)
     by_provider = {row[0].value: row[1] for row in prov_q.all()}
 
     # By threat category
-    threat_q = await db.execute(
+    threat_stmt = (
         select(AIInteraction.threat_category, func.count(AIInteraction.id))
         .where(AIInteraction.is_adversarial == True)
         .group_by(AIInteraction.threat_category)
     )
+    if model_name:
+        threat_stmt = threat_stmt.where(AIInteraction.model_name == model_name)
+    threat_q = await db.execute(threat_stmt)
     by_threat = {row[0].value: row[1] for row in threat_q.all()}
 
     # Adversarial case outcomes
-    success_count_q = await db.execute(
-        select(func.count(AdversarialCase.id)).where(AdversarialCase.is_successful_attack == True)
-    )
+    success_stmt = select(func.count(AdversarialCase.id)).join(
+        AIInteraction, AdversarialCase.interaction_id == AIInteraction.id
+    ).where(AdversarialCase.is_successful_attack == True)
+    if model_name:
+        success_stmt = success_stmt.where(AIInteraction.model_name == model_name)
+    success_count_q = await db.execute(success_stmt)
     success_count = success_count_q.scalar_one()
 
-    failed_count_q = await db.execute(
-        select(func.count(AdversarialCase.id)).where(AdversarialCase.is_successful_attack == False)
-    )
+    failed_stmt = select(func.count(AdversarialCase.id)).join(
+        AIInteraction, AdversarialCase.interaction_id == AIInteraction.id
+    ).where(AdversarialCase.is_successful_attack == False)
+    if model_name:
+        failed_stmt = failed_stmt.where(AIInteraction.model_name == model_name)
+    failed_count_q = await db.execute(failed_stmt)
     failed_count = failed_count_q.scalar_one()
 
     total_runs = success_count + failed_count
-    # ASP: Razão entre execuções bem-sucedidas do ataque e o total de execuções adversariais
     asp = round((success_count / total_runs) * 100, 2) if total_runs > 0 else 0.0
 
     # ASR: Razão entre payloads únicos que obtiveram pelo menos um sucesso e o total de payloads únicos
-    from sqlalchemy import cast, Integer
     unique_stmt = (
         select(
             AIInteraction.user_prompt,
@@ -102,6 +119,9 @@ async def get_security_metrics(
         .join(AdversarialCase, AdversarialCase.interaction_id == AIInteraction.id)
         .group_by(AIInteraction.user_prompt)
     )
+    if model_name:
+        unique_stmt = unique_stmt.where(AIInteraction.model_name == model_name)
+
     unique_res = await db.execute(unique_stmt)
     unique_rows = unique_res.all()
     
@@ -123,16 +143,36 @@ async def get_security_metrics(
     )
 
 
-@router.get("/export")
-async def export_interactions(
-    adversarial_only: bool = False,
+@router.get("/metrics/by-model")
+async def get_metrics_by_model(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Exporta todas as interações em formato JSON para análise científica."""
+    """Retorna a tabela comparativa de métricas de segurança individualizadas por modelo de LLM."""
+    query = text("SELECT * FROM view_metrics_by_model ORDER BY total_interactions DESC;")
+    try:
+        res = await db.execute(query)
+        rows = res.mappings().all()
+        return [dict(r) for r in rows]
+    except Exception:
+        # Fallback se a SQL view não tiver sido criada ainda
+        return []
+
+
+@router.get("/export")
+async def export_interactions(
+    adversarial_only: bool = False,
+    model_name: Optional[str] = Query(None, description="Filtra exportação por modelo de LLM"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Exporta todas as interações em formato JSON para análise científica (geral ou filtrado por modelo)."""
     query = select(AIInteraction).order_by(AIInteraction.created_at.asc())
     if adversarial_only:
         query = query.where(AIInteraction.is_adversarial == True)
+    if model_name:
+        query = query.where(AIInteraction.model_name == model_name)
+
     result = await db.execute(query)
     interactions = result.scalars().all()
 

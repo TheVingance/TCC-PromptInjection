@@ -48,13 +48,6 @@ providers:
       is_adversarial: true
       threat_category: "{{category}}"
 
-  - id: "file://scripts/promptfoo_provider.py"
-    label: "FinBot (Gemma 4 31B)"
-    config:
-      provider: "ollama"
-      model_name: "gemma4:31b"
-      is_adversarial: true
-      threat_category: "{{category}}"
 
   - id: "file://scripts/promptfoo_provider.py"
     label: "FinBot (Nemotron Mini)"

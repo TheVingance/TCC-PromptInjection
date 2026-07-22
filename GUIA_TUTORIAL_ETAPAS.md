@@ -81,7 +81,6 @@ Executa 20 payloads × 5 repetições = **100 execuções** para o modelo seleci
 # Exemplos:
 python scripts/run_experiments.py --model llama3.1:latest
 python scripts/run_experiments.py --model deepseek-r1:latest
-python scripts/run_experiments.py --model gemma4:31b
 python scripts/run_experiments.py --model nemotron-mini:latest
 python scripts/run_experiments.py --model deepseek-v2:latest
 python scripts/run_experiments.py --model gemma4:latest

@@ -22,7 +22,6 @@ MODEL_CONFIG_MAP = {
     "deepseek-r1:latest":   "promptfoo/deepseek_r1.yaml",
     "deepseek-v2:latest":   "promptfoo/deepseek_v2.yaml",
     "gemma4:latest":        "promptfoo/gemma4.yaml",
-    "gemma4:31b":           "promptfoo/gemma4_31b.yaml",
     "nemotron-mini:latest": "promptfoo/nemotron_mini.yaml",
 }
 

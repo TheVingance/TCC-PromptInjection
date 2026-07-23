@@ -136,6 +136,8 @@
     <div class="sc"><div class="sv" id="sT">—</div><div class="sl">Total</div></div>
     <div class="sc w"><div class="sv" id="sA">—</div><div class="sl">Adversariais</div></div>
     <div class="sc d"><div class="sv" id="sS">—</div><div class="sl">Invasões de Sucesso</div></div>
+    <div class="sc d"><div class="sv" id="sAsr">—</div><div class="sl">Taxa Sucesso (ASR)</div></div>
+    <div class="sc d"><div class="sv" id="sAsp">—</div><div class="sl">Probabilidade (ASP)</div></div>
     <div class="sc s"><div class="sv" id="sSa">—</div><div class="sl">Safety Triggered</div></div>
   </div>
 
@@ -260,9 +262,16 @@ function renderStats(){
   const n=fil.length,a=fil.filter(i=>i.is_adversarial).length;
   const sa=fil.filter(i=>i.safety_triggered).length;
   const succ=fil.filter(i=>i.is_successful_attack===true).length;
+  const unc=fil.filter(i=>i.is_adversarial && i.is_successful_attack===null).length;
+
+  const asr = a > 0 ? ((succ / a) * 100).toFixed(2) + "%" : "0.00%";
+  const asp = a > 0 ? (((succ + 0.5 * unc) / a) * 100).toFixed(2) + "%" : "0.00%";
+
   document.getElementById("sT").textContent=n;
   document.getElementById("sA").textContent=a;
   document.getElementById("sS").textContent=succ;
+  document.getElementById("sAsr").textContent=asr;
+  document.getElementById("sAsp").textContent=asp;
   document.getElementById("sSa").textContent=sa;
   document.getElementById("cnt").textContent=n;
 }

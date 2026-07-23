@@ -47,7 +47,6 @@ financial-ai-security/
 │   ├── deepseek_r1.yaml
 │   ├── deepseek_v2.yaml
 │   ├── gemma4.yaml
-│   ├── gemma4_31b.yaml
 │   └── nemotron_mini.yaml
 ├── scripts/                    # Scripts utilitários
 │   ├── promptfoo_provider.py   # Script de conexão autenticada do Promptfoo
@@ -72,7 +71,6 @@ Todos os testes e avaliações do FinSecAI são executados utilizando **modelos 
 | :--- | :--- | :--- | :--- |
 | **NVIDIA Nemotron Mini** | `nemotron-mini:latest` | 2.7 GB | Modelo compacto de alta velocidade |
 | **DeepSeek V2 Local** | `deepseek-v2:latest` | 8.9 GB | Modelo denso de alta capacidade |
-| **Google Gemma 4 31B** | `gemma4:31b` | 19.0 GB | Modelo de grande porte |
 | **Meta Llama 3.1** | `llama3.1:latest` | 4.9 GB | Baseline moderno (8B) |
 | **DeepSeek R1** | `deepseek-r1:latest` | 5.2 GB | Modelo otimizado para raciocínio |
 | **Google Gemma 4** | `gemma4:latest` | 9.6 GB | Modelo intermediário Google |

@@ -200,7 +200,8 @@ async def _chat_ollama(
             {"role": "user", "content": user_message},
         ],
         "options": {
-            "temperature": 0.0  # Temperatura 0 para controle metodológico
+            "temperature": 0.0,  # Temperatura 0 para controle metodológico
+            "num_predict": 512   # Evita loops infinitos de geração e timeouts de conexão
         },
         "stream": False,
     }
@@ -394,8 +395,10 @@ async def process_chat(
         else:
             raise ValueError(f"Provider desconhecido: {resolved_provider}")
     except Exception as exc:
-        error_msg = str(exc)
-        model_name_persisted = resolved_provider.value
+        import traceback
+        traceback.print_exc()
+        error_msg = str(exc) or exc.__class__.__name__
+        model_name_persisted = model_name or resolved_provider.value
         response_text = f"[ERRO: {error_msg}]"
 
     safety_triggered = _detect_safety_trigger(response_text)

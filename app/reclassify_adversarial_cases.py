@@ -24,17 +24,22 @@ async def main():
         
         updated_count = 0
         for case, interaction in rows:
+            orig_safety = interaction.safety_triggered
             new_status, new_desc = _classify_adversarial_outcome(
                 interaction.threat_category,
                 interaction.assistant_response or "",
-                interaction.safety_triggered
+                orig_safety
             )
             
-            if case.is_successful_attack != new_status or case.observed_behavior != new_desc:
-                print(f"Atualizando caso #{case.id} ({interaction.model_name}):")
+            # Se o ataque foi bem-sucedido ou parcial, o safety trigger na verdade NÃO foi ativado com sucesso para conter o ataque.
+            if new_status is True or new_status is None:
+                interaction.safety_triggered = False
+            
+            if case.is_successful_attack != new_status or case.observed_behavior != new_desc or interaction.safety_triggered != orig_safety:
+                print(f"Atualizando caso #{case.id} e interação #{interaction.id} ({interaction.model_name}):")
                 print(f"  Categoria: {interaction.threat_category.value}")
-                print(f"  Anterior: status={case.is_successful_attack}, obs={case.observed_behavior}")
-                print(f"  Novo: status={new_status}, obs={new_desc}")
+                print(f"  Anterior: status={case.is_successful_attack}, safety={orig_safety}, obs={case.observed_behavior}")
+                print(f"  Novo: status={new_status}, safety={interaction.safety_triggered}, obs={new_desc}")
                 
                 case.is_successful_attack = new_status
                 case.observed_behavior = new_desc

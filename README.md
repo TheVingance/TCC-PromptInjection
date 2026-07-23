@@ -107,7 +107,7 @@ O **FinSecAI** integra-se ao framework **Promptfoo** para execução automatizad
 
 ### Formas de Execução
 
-1. **Executar Todos os 7 Modelos Juntos (Matriz Comparativa - 700 execuções):**
+1. **Executar Todos os 6 Modelos Juntos (Matriz Comparativa - 600 execuções):**
    ```bash
    python scripts/run_experiments.py
    ```
@@ -117,7 +117,6 @@ O **FinSecAI** integra-se ao framework **Promptfoo** para execução automatizad
    # Exemplos:
    python scripts/run_experiments.py --model llama3.1:latest
    python scripts/run_experiments.py --model deepseek-r1:latest
-   python scripts/run_experiments.py --model gemma4:31b
    python scripts/run_experiments.py --model nemotron-mini:latest
    python scripts/run_experiments.py --model deepseek-v2:latest
    python scripts/run_experiments.py --model gemma4:latest
@@ -145,5 +144,6 @@ O **FinSecAI** integra-se ao framework **Promptfoo** para execução automatizad
 
 3. **Acessar os Serviços**:
    *   **Dashboard do Pesquisador**: [http://localhost:3000](http://localhost:3000)
+   *   **Painel com Histórico de Todas as Interações**: [http://localhost:3000/interactions.html](http://localhost:3000/interactions.html)
    *   **Documentação da API (FastAPI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
    *   **Painel Administrativo do Banco (pgAdmin)**: [http://localhost:5050](http://localhost:5050) (`admin@finsecai.com` / `adminpass`)

@@ -604,11 +604,13 @@ function drawAttacksChart(m) {
 
 // ─── Latency Chart (Canvas) ───────────────────────────────────────────────────
 function setupLatencyCanvas() {
+  if (!latencyCanvas) return;
   latencyCanvas.width = latencyCanvas.parentElement.offsetWidth;
   latencyCanvas.height = 80;
 }
 
 function drawLatencyChart() {
+  if (!latencyCanvas) return;
   const ctx = latencyCanvas.getContext("2d");
   const w = latencyCanvas.width;
   const h = latencyCanvas.height;

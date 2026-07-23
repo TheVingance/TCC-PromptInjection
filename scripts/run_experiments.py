@@ -102,8 +102,8 @@ def main():
         total_exec = "100 execuções (20 payloads × 5 repetições)"
     else:
         config_file = ALL_MODELS_CONFIG
-        label = "TODOS os 7 modelos"
-        total_exec = "700 execuções (7 modelos × 20 payloads × 5 repetições)"
+        label = "TODOS os 6 modelos"
+        total_exec = "600 execuções (6 modelos × 20 payloads × 5 repetições)"
 
     print("=" * 60)
     print("[FinSecAI] Iniciando Ciclo de Avaliação de Segurança...")

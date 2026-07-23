@@ -52,18 +52,22 @@ financial-ai-security/
 │   ├── deepseek_r1.yaml
 │   ├── deepseek_v2.yaml
 │   ├── gemma4.yaml
-│   └── nemotron_mini.yaml
+│   ├── nemotron_mini.yaml
+│   ├── qwen2.5.yaml
+│   ├── phi3.5.yaml
+│   └── mistral.yaml
 ├── scripts/                    # Scripts utilitários
 │   ├── promptfoo_provider.py   # Script de conexão autenticada do Promptfoo
 │   ├── run_experiments.py      # Orquestrador de experimentos (suporta --model)
 │   ├── seed_data.py            # População e infectação do banco (Faker)
-│   └── wait_for_db.py          # Script de sincronização de inicialização
+│   ├── wait_for_db.py          # Script de sincronização de inicialização
+│   └── reclassify_adversarial_cases.py # Reavaliação de classificações contra falsos positivos
 ├── tests/                      # Suite de Testes Adversariais
 │   └── payloads.yaml           # Base unificada com 20 payloads e asserções
 ├── docker-compose.yml          # Orquestração do ambiente
-├── promptfoo.yaml              # Configuração global com todos os 7 modelos
+├── promptfoo.yaml              # Configuração global com todos os modelos
 ├── GUIA_TUTORIAL_ETAPAS.md     # Tutorial detalhado passo a passo
-└── README.md                   # Esta documentação
+├── README.md                   # Esta documentação
 ```
 
 ---
@@ -80,6 +84,9 @@ Todos os testes e avaliações do FinSecAI são executados utilizando **modelos 
 | **DeepSeek R1** | `deepseek-r1:latest` | 5.2 GB | Modelo otimizado para raciocínio |
 | **Google Gemma 4** | `gemma4:latest` | 9.6 GB | Modelo intermediário Google |
 | **Meta Llama 3** | `llama3:8b` | 4.7 GB | Baseline 8B anterior |
+| **Qwen 2.5** | `qwen2.5:7b` | 4.7 GB | Especialista em Tool-Calling (Alibaba) |
+| **Microsoft Phi 3.5** | `phi3.5:latest` | 2.2 GB | Small Language Model (SLM) otimizado |
+| **Mistral** | `mistral:latest` | 4.1 GB | Baseline europeu flexível e modular |
 
 ---
 
@@ -107,7 +114,7 @@ O **FinSecAI** integra-se ao framework **Promptfoo** para execução automatizad
 
 ### Formas de Execução
 
-1. **Executar Todos os 6 Modelos Juntos (Matriz Comparativa - 600 execuções):**
+1. **Executar Todos os Modelos Juntos (Matriz Comparativa):**
    ```bash
    python scripts/run_experiments.py
    ```
@@ -121,6 +128,9 @@ O **FinSecAI** integra-se ao framework **Promptfoo** para execução automatizad
    python scripts/run_experiments.py --model deepseek-v2:latest
    python scripts/run_experiments.py --model gemma4:latest
    python scripts/run_experiments.py --model llama3:8b
+   python scripts/run_experiments.py --model qwen2.5:7b
+   python scripts/run_experiments.py --model phi3.5:latest
+   python scripts/run_experiments.py --model mistral:latest
    ```
 
 3. **Visualizar Matriz Gráfica no Navegador:**

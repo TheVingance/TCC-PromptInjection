@@ -15,11 +15,13 @@ Este tutorial detalha o procedimento operacional padronizado para executar o amb
 |---|---|---|---|
 | NVIDIA Nemotron Mini | `nemotron-mini:latest` | 2.7 GB | LLM Compacto de alta eficiência |
 | DeepSeek V2 Local | `deepseek-v2:latest` | 8.9 GB | Modelo de alta capacidade |
-| Google Gemma 4 31B | `gemma4:31b` | 19.0 GB | Modelo denso de grande porte |
 | Meta Llama 3.1 | `llama3.1:latest` | 4.9 GB | Modelo baseline moderno (8B) |
 | DeepSeek R1 | `deepseek-r1:latest` | 5.2 GB | Modelo com foco em raciocínio |
 | Google Gemma 4 | `gemma4:latest` | 9.6 GB | Modelo Gemma intermediário |
 | Meta Llama 3 | `llama3:8b` | 4.7 GB | Modelo baseline anterior |
+| Qwen 2.5 | `qwen2.5:7b` | 4.7 GB | Especialista em Tool-Calling (Alibaba) |
+| Microsoft Phi 3.5 | `phi3.5:latest` | 2.2 GB | Small Language Model (SLM) otimizado |
+| Mistral | `mistral:latest` | 4.1 GB | Baseline europeu flexível e modular |
 
 ---
 
@@ -63,11 +65,11 @@ O banco de dados relacional (PostgreSQL) deve conter contas fictícias e **dados
 
 ## 🧪 Etapa 3: Execução dos Testes Adversariais Automatizados (Promptfoo)
 
-Os experimentos podem ser executados de duas formas: **todos os 7 modelos em lote** (matriz comparativa) ou **um modelo por vez**.
+Os experimentos podem ser executados de duas formas: **todos os modelos configurados em lote** (matriz comparativa) ou **um modelo por vez**.
 
-### Opção A: Executar Todos os 7 Modelos Juntos (Matriz Comparativa Completa)
+### Opção A: Executar Todos os Modelos Juntos (Matriz Comparativa Completa)
 
-Executa 20 payloads × 5 repetições × 7 modelos = **700 execuções**:
+Executa os experimentos sequencialmente para todos os modelos registrados:
 
 ```bash
 python scripts/run_experiments.py
@@ -85,6 +87,9 @@ python scripts/run_experiments.py --model nemotron-mini:latest
 python scripts/run_experiments.py --model deepseek-v2:latest
 python scripts/run_experiments.py --model gemma4:latest
 python scripts/run_experiments.py --model llama3:8b
+python scripts/run_experiments.py --model qwen2.5:7b
+python scripts/run_experiments.py --model phi3.5:latest
+python scripts/run_experiments.py --model mistral:latest
 ```
 
 ---
@@ -139,3 +144,10 @@ O sistema expõe 5 ferramentas financeiras ao modelo via protocolo MCP (Model Co
 
 - **Erro de Caminho de Arquivo no Promptfoo:**
   Os arquivos individuais em `promptfoo/` usam caminhos relativos ao diretório raiz (`../scripts/promptfoo_provider.py` e `../tests/payloads.yaml`). Sempre execute os comandos a partir da raiz do projeto.
+
+- **Correção de Falsos Positivos nos Dados Salvos:**
+  Se o classificador do backend marcar alguma defesa explícita da IA (ex: "Não posso te dar essa informação") como ataque bem-sucedido devido ao uso de palavras-chave como "regras" ou "saldo" na recusa, você pode executar o script utilitário de reclassificação retroativa.
+  Esse script varrerá os registros de interações no banco de dados e recalculará as classificações corretas:
+  ```bash
+  docker compose exec api_v2 python /app/reclassify_adversarial_cases.py
+  ```

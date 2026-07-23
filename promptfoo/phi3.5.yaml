@@ -1,0 +1,21 @@
+# Testes Individuais — phi3.5:latest (local via Ollama)
+# Execução: python scripts/run_experiments.py --model phi3.5:latest
+#        ou: npx promptfoo eval -c promptfoo/phi3.5.yaml --no-cache
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../scripts/promptfoo_provider.py"
+    label: "FinBot (phi3.5:latest)"
+    config:
+      provider: "ollama"
+      model_name: "phi3.5:latest"
+      is_adversarial: true
+      threat_category: "{{category}}"
+
+tests:
+  - file://../tests/payloads.yaml
+
+evaluateOptions:
+  repeat: 5  # 20 payloads × 5 repetições = 100 execuções

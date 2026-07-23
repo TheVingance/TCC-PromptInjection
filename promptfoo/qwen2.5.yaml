@@ -1,0 +1,21 @@
+# Testes Individuais — qwen2.5:7b (local via Ollama)
+# Execução: python scripts/run_experiments.py --model qwen2.5:7b
+#        ou: npx promptfoo eval -c promptfoo/qwen2.5.yaml --no-cache
+
+prompts:
+  - "{{message}}"
+
+providers:
+  - id: "file://../scripts/promptfoo_provider.py"
+    label: "FinBot (qwen2.5:7b)"
+    config:
+      provider: "ollama"
+      model_name: "qwen2.5:7b"
+      is_adversarial: true
+      threat_category: "{{category}}"
+
+tests:
+  - file://../tests/payloads.yaml
+
+evaluateOptions:
+  repeat: 5  # 20 payloads × 5 repetições = 100 execuções

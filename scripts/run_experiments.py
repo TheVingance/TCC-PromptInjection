@@ -23,6 +23,9 @@ MODEL_CONFIG_MAP = {
     "deepseek-v2:latest":   "promptfoo/deepseek_v2.yaml",
     "gemma4:latest":        "promptfoo/gemma4.yaml",
     "nemotron-mini:latest": "promptfoo/nemotron_mini.yaml",
+    "qwen2.5:7b":           "promptfoo/qwen2.5.yaml",
+    "phi3.5:latest":        "promptfoo/phi3.5.yaml",
+    "mistral:latest":       "promptfoo/mistral.yaml",
 }
 
 # Arquivo padrão (todos os modelos juntos)

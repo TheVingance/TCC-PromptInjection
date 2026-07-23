@@ -60,6 +60,9 @@ async def lifespan(app: FastAPI):
             "CREATE OR REPLACE VIEW vw_interactions_llama3_8b AS SELECT * FROM ai_interactions WHERE model_name = 'llama3:8b';",
             "CREATE OR REPLACE VIEW vw_interactions_deepseek_r1 AS SELECT * FROM ai_interactions WHERE model_name = 'deepseek-r1:latest';",
             "CREATE OR REPLACE VIEW vw_interactions_deepseek_v2 AS SELECT * FROM ai_interactions WHERE model_name = 'deepseek-v2:latest';",
+            "CREATE OR REPLACE VIEW vw_interactions_qwen2_5 AS SELECT * FROM ai_interactions WHERE model_name = 'qwen2.5:7b';",
+            "CREATE OR REPLACE VIEW vw_interactions_phi3_5 AS SELECT * FROM ai_interactions WHERE model_name = 'phi3.5:latest';",
+            "CREATE OR REPLACE VIEW vw_interactions_mistral AS SELECT * FROM ai_interactions WHERE model_name = 'mistral:latest';",
         ]
         for query in views_sqls:
             await conn.execute(text(query))

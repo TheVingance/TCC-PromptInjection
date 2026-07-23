@@ -306,6 +306,7 @@ body {
 
 /* ── Panel ────────────────────────────────────────────────────────────────── */
 .panel {
+  flex-shrink: 0;
   background: var(--bg-panel);
   border: 1px solid var(--bg-panel-border);
   border-radius: var(--radius);
@@ -320,7 +321,7 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-.panel-flex { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.panel-flex { flex-shrink: 0; display: flex; flex-direction: column; min-height: 200px; }
 
 .panel-header {
   display: flex;
@@ -837,13 +838,38 @@ body {
   letter-spacing: 0.5px;
 }
 
+/* ── Open-All Button (Expandir) ──────────────────────────────────────────── */
+.btn-open-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--bg-panel-border);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-open-all:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+
 /* ── Interactions List ────────────────────────────────────────────────────── */
 .interactions-list {
-  flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: 300px;
   scrollbar-width: thin;
   scrollbar-color: var(--bg-panel-border) transparent;
 }
@@ -1076,3 +1102,322 @@ body {
 
 [data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(0, 188, 212, 0.18); }
 [data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(0, 188, 212, 0.4); }
+
+/* ── Panel Tabs (Attacks Chart ↔ Payload Matrix) ─────────────────────────── */
+.panel-tabs { padding: 0; }
+
+.panel-header-tabs {
+  padding-bottom: 0;
+  border-bottom: none;
+  flex-direction: column;
+  gap: 0;
+}
+
+.panel-tabs-nav {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 12px 0;
+}
+
+.panel-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 6px 6px 0 0;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.panel-tab:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.panel-tab.active {
+  background: var(--bg-hover);
+  border-bottom-color: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.tab-content {
+  padding: 12px;
+}
+
+/* Os painéis da matriz e de ataques expandem naturalmente; o right-panel cuida da rolagem por scroll */
+#tabContentAttacks,
+#tabContentMatrix {
+  overflow: visible;
+}
+
+.tab-content.hidden { display: none; }
+.tab-content.active { display: block; }
+
+/* ── Matrix Controls (Category Chips) ───────────────────────────────────────── */
+.matrix-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.matrix-filter-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.matrix-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.chip {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--bg-panel-border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.chip:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent-light);
+}
+
+.chip.chip-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ── Matrix Body & Model Cards ───────────────────────────────────────────────── */
+.matrix-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* sem max-height: o right-panel já tem overflow-y:auto e rola a página toda */
+  padding-right: 4px;
+}
+
+.matrix-model-card {
+  border: 1px solid var(--bg-panel-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-input);
+  transition: box-shadow 0.2s ease;
+}
+
+.matrix-model-card:hover {
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.matrix-model-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.matrix-model-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.matrix-model-icon { font-size: 1rem; }
+
+.matrix-model-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.matrix-stat {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.matrix-stat-pct {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Risk badges */
+.matrix-risk-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.risk-low    { background: rgba(0, 200, 150, 0.18); color: #00c896; border: 1px solid rgba(0, 200, 150, 0.4); }
+.risk-medium { background: rgba(255, 176, 56, 0.18); color: #ffb038; border: 1px solid rgba(255, 176, 56, 0.4); }
+.risk-high   { background: rgba(255, 100, 50, 0.18); color: #ff6432; border: 1px solid rgba(255, 100, 50, 0.4); }
+.risk-critical { background: rgba(220, 50, 80, 0.22); color: #ff2d55; border: 1px solid rgba(220, 50, 80, 0.5); }
+
+/* Progress bar */
+.matrix-progress-bar {
+  height: 4px;
+  background: rgba(0,0,0,0.06);
+  margin: 0 12px 4px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.matrix-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.matrix-progress-fill.risk-low      { background: #00c896; }
+.matrix-progress-fill.risk-medium   { background: #ffb038; }
+.matrix-progress-fill.risk-high     { background: #ff6432; }
+.matrix-progress-fill.risk-critical { background: #ff2d55; }
+
+/* Payload list */
+.matrix-payload-list {
+  padding: 0 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.matrix-payload-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+  cursor: default;
+}
+
+.matrix-payload-item:hover { background: var(--bg-hover); }
+
+.payload-success { border-left: 3px solid rgba(220, 50, 80, 0.6); }
+.payload-blocked { border-left: 3px solid rgba(0, 200, 150, 0.6); }
+
+.payload-status-icon { font-size: 1rem; flex-shrink: 0; }
+
+.payload-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.payload-preview {
+  font-size: 0.72rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.payload-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.payload-cat-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 12px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cat-jailbreak       { background: rgba(92, 107, 192, 0.18); color: #5c6bc0; }
+.cat-data_extraction { background: rgba(255, 152, 0, 0.18); color: #f57c00; }
+.cat-priv_esc        { background: rgba(229, 57, 53, 0.18); color: #e53935; }
+.cat-prompt_injection { background: rgba(0, 188, 212, 0.18); color: #0097b2; }
+.cat-none, .cat-other { background: rgba(120, 130, 150, 0.15); color: var(--text-secondary); }
+
+.payload-runs {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Result badge (right side) */
+.payload-result-badge {
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-success {
+  background: rgba(220, 50, 80, 0.12);
+  color: #ff2d55;
+  border: 1px solid rgba(220, 50, 80, 0.35);
+}
+
+.badge-blocked {
+  background: rgba(0, 200, 150, 0.12);
+  color: #00c896;
+  border: 1px solid rgba(0, 200, 150, 0.35);
+}
+
+/* ── Dark Mode Overrides — Matrix ────────────────────────────────────────────── */
+[data-theme="dark"] .matrix-model-card {
+  background: rgba(255,255,255,0.04);
+  border-color: rgba(0, 188, 212, 0.12);
+}
+
+[data-theme="dark"] .panel-tab.active {
+  background: rgba(0, 188, 212, 0.12);
+}
+
+[data-theme="dark"] .chip { border-color: rgba(0, 188, 212, 0.2); }
+
+[data-theme="dark"] .matrix-progress-bar { background: rgba(255,255,255,0.06); }
+
+[data-theme="dark"] .badge-success { background: rgba(220, 50, 80, 0.2); }
+[data-theme="dark"] .badge-blocked { background: rgba(0, 200, 150, 0.15); }

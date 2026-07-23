@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=6.0" />
+  <link rel="stylesheet" href="style.css?v=6.2" />
 </head>
 <body>
   <!-- Animated background -->
@@ -246,21 +246,54 @@
             <button class="filter-btn active" id="filterAll">Todos</button>
             <button class="filter-btn" id="filterAdv">⚠️ Adversariais</button>
           </div>
+          <button class="btn-open-all" id="btnOpenAllInteractions" title="Abrir todas as interações em nova janela">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Expandir
+          </button>
         </div>
         <div class="interactions-list" id="interactionsList">
           <p class="empty-state">Autentique-se para ver o histórico.</p>
         </div>
       </div>
 
-      <!-- Attacks & Volume Chart -->
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-icon">📈</span>
-          <h2 class="panel-title">Interações vs Ataques com Sucesso (%)</h2>
+
+      <!-- Attacks & Volume Chart + Payload Matrix (tabbed) -->
+      <div class="panel panel-tabs">
+        <div class="panel-header panel-header-tabs">
+          <div class="panel-tabs-nav">
+            <button class="panel-tab active" id="tabAttacks" onclick="switchPanelTab('attacks')">
+              <span class="panel-icon">📈</span> Interações vs Ataques
+            </button>
+            <button class="panel-tab" id="tabMatrix" onclick="switchPanelTab('matrix')">
+              <span class="panel-icon">🎯</span> Matriz de Vulnerabilidade
+            </button>
+          </div>
         </div>
-        <canvas id="attacksChart" class="attacks-chart"></canvas>
+
+        <!-- Tab: Attacks Chart -->
+        <div id="tabContentAttacks" class="tab-content active">
+          <canvas id="attacksChart" class="attacks-chart"></canvas>
+        </div>
+
+        <!-- Tab: Payload Vulnerability Matrix -->
+        <div id="tabContentMatrix" class="tab-content hidden">
+          <div class="matrix-controls">
+            <span class="matrix-filter-label">Filtrar categoria:</span>
+            <div class="matrix-filter-chips" id="matrixFilterChips">
+              <button class="chip chip-active" data-cat="all">Todos</button>
+              <button class="chip" data-cat="jailbreak">Jailbreak</button>
+              <button class="chip" data-cat="data_extraction">Exfiltração</button>
+              <button class="chip" data-cat="priv_esc">Priv. Esc.</button>
+              <button class="chip" data-cat="prompt_injection">Injeção</button>
+            </div>
+          </div>
+          <div class="matrix-body" id="matrixBody">
+            <p class="empty-state">Autentique-se e atualize para ver a matriz.</p>
+          </div>
+        </div>
       </div>
     </aside>
+
 
   </main>
 
@@ -275,6 +308,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=6.0"></script>
+  <script src="app.js?v=6.2"></script>
 </body>
 </html>

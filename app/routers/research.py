@@ -170,6 +170,67 @@ async def get_metrics_by_model(
         return []
 
 
+@router.get("/payload-success-matrix")
+async def get_payload_success_matrix(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retorna matriz de sucesso de ataques por modelo × payload.
+    Para cada LLM, lista todos os payloads adversariais executados com:
+    - Prévia do texto do payload
+    - Categoria de ameaça
+    - Total de execuções
+    - Execuções com sucesso de ataque
+    - Flag booleana indicando se houve pelo menos 1 sucesso
+    """
+    stmt = (
+        select(
+            AIInteraction.model_name,
+            AIInteraction.user_prompt,
+            AIInteraction.threat_category,
+            func.count(AdversarialCase.id).label("total_runs"),
+            func.sum(
+                func.cast(AdversarialCase.is_successful_attack, Integer)
+            ).label("successful_runs"),
+        )
+        .join(AdversarialCase, AdversarialCase.interaction_id == AIInteraction.id)
+        .where(AIInteraction.is_adversarial == True)
+        .group_by(
+            AIInteraction.model_name,
+            AIInteraction.user_prompt,
+            AIInteraction.threat_category,
+        )
+        .order_by(AIInteraction.model_name, AIInteraction.threat_category)
+    )
+
+    result = await db.execute(stmt)
+    rows = result.all()
+
+    # Agrupa por modelo
+    matrix: Dict[str, List[Dict[str, Any]]] = {}
+    for row in rows:
+        model = row.model_name
+        total = row.total_runs or 0
+        successful = int(row.successful_runs or 0)
+        if model not in matrix:
+            matrix[model] = []
+        matrix[model].append(
+            {
+                "payload_preview": (row.user_prompt[:120] + "…") if len(row.user_prompt) > 120 else row.user_prompt,
+                "category": row.threat_category.value if hasattr(row.threat_category, "value") else str(row.threat_category),
+                "total_runs": total,
+                "successful_runs": successful,
+                "attack_succeeded": successful > 0,
+            }
+        )
+
+    return [
+        {"model_name": model, "payloads": payloads}
+        for model, payloads in sorted(matrix.items())
+    ]
+
+
 @router.get("/export")
 async def export_interactions(
     adversarial_only: bool = False,
@@ -178,14 +239,18 @@ async def export_interactions(
     db: AsyncSession = Depends(get_db),
 ):
     """Exporta todas as interações em formato JSON para análise científica (geral ou filtrado por modelo)."""
-    query = select(AIInteraction).order_by(AIInteraction.created_at.asc())
+    stmt = (
+        select(AIInteraction, AdversarialCase.is_successful_attack)
+        .outerjoin(AdversarialCase, AdversarialCase.interaction_id == AIInteraction.id)
+        .order_by(AIInteraction.created_at.asc())
+    )
     if adversarial_only:
-        query = query.where(AIInteraction.is_adversarial == True)
+        stmt = stmt.where(AIInteraction.is_adversarial == True)
     if model_name:
-        query = query.where(AIInteraction.model_name == model_name)
+        stmt = stmt.where(AIInteraction.model_name == model_name)
 
-    result = await db.execute(query)
-    interactions = result.scalars().all()
+    result = await db.execute(stmt)
+    rows = result.all()
 
     return [
         {
@@ -198,11 +263,13 @@ async def export_interactions(
             "threat_category": i.threat_category.value,
             "is_adversarial": i.is_adversarial,
             "safety_triggered": i.safety_triggered,
+            "is_successful_attack": attack_succ,
             "researcher_notes": i.researcher_notes,
             "tokens_used": i.tokens_used,
             "latency_ms": i.latency_ms,
             "error_message": i.error_message,
             "created_at": i.created_at.isoformat(),
         }
-        for i in interactions
+        for i, attack_succ in rows
     ]
+

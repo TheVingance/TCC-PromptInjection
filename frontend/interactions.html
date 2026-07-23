@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinSecAI - Todas as Interações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#f0f6ff;--sur:#fff;--brd:rgba(0,188,212,.22);--acc:#0097b2;--txt:#0d2340;--muted:#7da0bb;--sec:#3d6080;--dan:#e53935;--wrn:#f57c00;--ok:#00897b;--inp:rgba(235,245,255,.9);--sh:0 2px 12px rgba(0,100,180,.1);--r:10px}
+    [data-theme=dark]{--bg:#070d1a;--sur:rgba(13,20,36,.98);--brd:rgba(0,188,212,.15);--txt:#e8f4ff;--muted:#4a6a88;--sec:#8ab4cc;--inp:rgba(255,255,255,.05);--sh:0 2px 16px rgba(0,0,0,.4)}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;transition:background .3s,color .3s}
+    .hidden{display:none!important}
+
+    /* Header */
+    .hdr{position:sticky;top:0;z-index:100;background:var(--sur);border-bottom:1px solid var(--brd);box-shadow:var(--sh);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(12px)}
+    .logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700}.logo-a{color:var(--acc)}
+    .badge{font-size:9px;font-weight:700;letter-spacing:1px;background:var(--acc);color:#fff;border-radius:4px;padding:2px 6px}
+    .hr{display:flex;align-items:center;gap:12px}
+    .tok{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--muted)}.tok.ok{color:var(--ok)}.tok.err{color:var(--dan)}
+    .btn-th{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1.5px solid var(--brd);background:var(--inp);color:var(--sec);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+    .btn-th:hover{border-color:var(--acc);color:var(--acc)}
+
+    /* Main */
+    .main{max-width:1440px;margin:0 auto;padding:24px 24px 64px}
+    h1{font-size:22px;font-weight:700;margin-bottom:4px}
+    .sub{font-size:13px;color:var(--muted);margin-bottom:20px}.sub span{font-family:'JetBrains Mono',monospace;color:var(--acc);font-weight:600}
+
+    /* Stats */
+    .stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+    .sc{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r);padding:12px 20px;min-width:110px;box-shadow:var(--sh)}
+    .sv{font-size:22px;font-weight:700}.sl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-top:2px}
+    .sc.d .sv{color:var(--dan)}.sc.s .sv{color:var(--ok)}.sc.w .sv{color:var(--wrn)}
+
+    /* Toolbar */
+    .tb{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:20px;background:var(--sur);border:1px solid var(--brd);border-radius:var(--r);padding:12px 16px;box-shadow:var(--sh)}
+    .ti{flex:1;min-width:180px;background:var(--inp);border:1px solid var(--brd);border-radius:8px;color:var(--txt);font-family:inherit;font-size:13px;padding:7px 12px;outline:none;transition:border-color .2s}.ti:focus{border-color:var(--acc)}
+    .ts{background:var(--inp);border:1px solid var(--brd);border-radius:8px;color:var(--txt);font-family:inherit;font-size:12px;padding:7px 28px 7px 10px;outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%238ba5cc'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border-color .2s}.ts:focus{border-color:var(--acc)}
+    .tg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sec);cursor:pointer;white-space:nowrap}.tg input{accent-color:var(--acc);width:14px;height:14px}
+    .br{padding:7px 14px;border-radius:8px;border:none;background:var(--acc);color:#fff;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}.br:hover{opacity:.88;transform:translateY(-1px)}
+
+    /* Table */
+    .tw{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    thead{background:var(--inp);border-bottom:1px solid var(--brd)}
+    th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
+    td{padding:10px 14px;border-bottom:1px solid var(--brd);color:var(--sec);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tbody tr{cursor:pointer;transition:background .15s}
+    tbody tr:hover{background:rgba(0,188,212,.06)}
+    .tp{max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--txt);font-size:12px}
+    .tr2{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
+    .tm{font-family:'JetBrains Mono',monospace;font-size:11px}
+
+    /* Tags & Status Badges */
+    .tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+    .ta{background:rgba(245,124,0,.15);color:var(--wrn)}
+    .ts2{background:rgba(0,137,123,.15);color:var(--ok)}
+    
+    .tag-attack-succ { background:rgba(229,57,53,0.18); color:var(--dan); border:1px solid rgba(229,57,53,0.3); }
+    .tag-attack-block { background:rgba(0,137,123,0.18); color:var(--ok); border:1px solid rgba(0,137,123,0.3); }
+    .tag-attack-partial { background:rgba(245,124,0,0.18); color:var(--wrn); border:1px solid rgba(245,124,0,0.3); }
+
+    .tj{background:rgba(92,107,192,.15);color:#5c6bc0}
+    .td2{background:rgba(255,152,0,.15);color:#f57c00}
+    .te{background:rgba(229,57,53,.15);color:#e53935}
+    .tpi{background:rgba(0,188,212,.15);color:#0097b2}
+    .tn{background:rgba(120,130,150,.1);color:var(--muted)}
+
+    /* Pagination */
+    .pg{display:flex;align-items:center;gap:8px;justify-content:center;padding:16px;border-top:1px solid var(--brd)}
+    .pb{padding:5px 12px;border-radius:6px;border:1px solid var(--brd);background:var(--inp);color:var(--sec);font-family:inherit;font-size:12px;cursor:pointer;transition:all .15s}.pb:hover:not(:disabled){border-color:var(--acc);color:var(--acc)}.pb:disabled{opacity:.4;cursor:default}
+    .pi{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+    /* Loading */
+    .ld{display:flex;align-items:center;justify-content:center;padding:60px;gap:12px;color:var(--muted)}
+    .sp{width:20px;height:20px;border:2px solid var(--brd);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .et{text-align:center;padding:40px!important;color:var(--muted);font-size:13px}
+
+    /* Modal - Dashboard Style */
+    .mo{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:24px}
+    .md{background:var(--sur);border:1px solid var(--brd);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.3);width:100%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+    .mh{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--brd);flex-shrink:0}
+    .mt{font-size:16px;font-weight:600}
+    .mc{width:28px;height:28px;border:none;background:var(--inp);border-radius:50%;cursor:pointer;font-size:14px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s}.mc:hover{background:var(--dan);color:#fff}
+    .mb{overflow-y:auto;padding:24px;flex:1;display:flex;flex-direction:column;gap:16px}
+    
+    .modal-field { margin-bottom: 4px; }
+    .modal-field-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .modal-field-value {
+      font-size: 13px;
+      color: var(--txt);
+      background: var(--inp);
+      border: 1px solid var(--brd);
+      border-radius: 8px;
+      padding: 10px 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'JetBrains Mono', monospace;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(0,188,212,.3);border-radius:5px}
+  </style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo">
+    <span>🔐</span><span>FinSec<span class="logo-a">AI</span></span>
+    <span class="badge">INTERAÇÕES</span>
+  </div>
+  <div class="hr">
+    <span class="tok" id="tok">Verificando...</span>
+    <button class="btn-th" id="btnTh">🌙 Modo Escuro</button>
+  </div>
+</header>
+
+<div class="main">
+  <h1>📜 Todas as Interações</h1>
+  <p class="sub">Total filtrado: <span id="cnt">—</span></p>
+
+  <div class="stats">
+    <div class="sc"><div class="sv" id="sT">—</div><div class="sl">Total</div></div>
+    <div class="sc w"><div class="sv" id="sA">—</div><div class="sl">Adversariais</div></div>
+    <div class="sc d"><div class="sv" id="sS">—</div><div class="sl">Invasões de Sucesso</div></div>
+    <div class="sc s"><div class="sv" id="sSa">—</div><div class="sl">Safety Triggered</div></div>
+  </div>
+
+  <div class="tb">
+    <input class="ti" type="text" id="q" placeholder="🔍 Buscar no prompt ou resposta..." />
+    <select class="ts" id="sortOrder">
+      <option value="desc">⬇️ Mais Recente Primeiro</option>
+      <option value="asc">⬆️ Mais Antiga Primeiro</option>
+    </select>
+    <select class="ts" id="fm">
+      <option value="">🤖 Todos os Modelos</option>
+      <option>nemotron-mini:latest</option><option>gemma4:latest</option>
+      <option>llama3.1:latest</option><option>llama3:8b</option>
+      <option>deepseek-r1:latest</option><option>deepseek-v2:latest</option>
+    </select>
+    <select class="ts" id="fc">
+      <option value="">🏷️ Todas as Categorias</option>
+      <option value="jailbreak">Jailbreak</option>
+      <option value="data_extraction">Exfiltração</option>
+      <option value="priv_esc">Escalada de Privilégios</option>
+      <option value="prompt_injection">Injeção de Prompt</option>
+      <option value="none">Normal</option>
+    </select>
+    <label class="tg"><input type="checkbox" id="onlySuccessful" /> 💀 Invasões com Sucesso</label>
+    <label class="tg"><input type="checkbox" id="oa" /> ⚠️ Só adversariais</label>
+    <label class="tg"><input type="checkbox" id="os" /> 🛡️ Safety triggered</label>
+    <button class="br" id="btnR">↺ Atualizar</button>
+  </div>
+
+  <div class="tw">
+    <div class="ld" id="ld"><div class="sp"></div> Carregando...</div>
+    <table id="tbl" class="hidden">
+      <thead><tr>
+        <th>#</th><th>Modelo</th><th>Categoria</th><th>Resultado Ataque</th><th>Prompt</th>
+        <th>Resposta</th><th>Safety</th><th>Adv.</th><th>ms</th><th>Data / Hora</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="pg hidden" id="pg">
+      <button class="pb" id="prev">&#8249; Anterior</button>
+      <span class="pi" id="pinfo">—</span>
+      <button class="pb" id="next">Próxima &#8250;</button>
+    </div>
+  </div>
+</div>
+
+<div class="mo hidden" id="modal">
+  <div class="md">
+    <div class="mh"><span class="mt">Detalhes da Interação</span><button class="mc" id="cls">✕</button></div>
+    <div class="mb" id="mbody"></div>
+  </div>
+</div>
+
+<script>
+const API="http://localhost:8000/api/v1",PG=50;
+let tok=localStorage.getItem("finsec_token"),all=[],fil=[],pg=1;
+
+/* Theme */
+const ht=document.documentElement,btnTh=document.getElementById("btnTh");
+const th=localStorage.getItem("finsec_theme")||"light";
+ht.setAttribute("data-theme",th);
+btnTh.textContent=th==="dark"?"☀️ Modo Claro":"🌙 Modo Escuro";
+btnTh.addEventListener("click",()=>{
+  const n=ht.getAttribute("data-theme")==="dark"?"light":"dark";
+  ht.setAttribute("data-theme",n);localStorage.setItem("finsec_theme",n);
+  btnTh.textContent=n==="dark"?"☀️ Modo Claro":"🌙 Modo Escuro";
+});
+
+/* Auth */
+function exp(t){if(!t)return true;try{const p=JSON.parse(atob(t.split(".")[1]));return Date.now()>=p.exp*1000}catch{return true}}
+const tokEl=document.getElementById("tok");
+if(!tok||exp(tok)){tokEl.textContent="Sessão expirada — faça login";tokEl.className="tok err";}
+else{tokEl.textContent="✓ Autenticado";tokEl.className="tok ok";}
+
+/* Load */
+async function load(){
+  if(!tok||exp(tok))return;
+  const ld=document.getElementById("ld"),tbl=document.getElementById("tbl"),pge=document.getElementById("pg");
+  ld.style.display="flex";tbl.classList.add("hidden");pge.classList.add("hidden");
+  try{
+    const r=await fetch(API+"/research/export",{headers:{"Authorization":"Bearer "+tok}});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    all=await r.json();applyF();
+  }catch(e){ld.innerHTML="<span style='color:var(--dan)'>Erro: "+e.message+"</span>";}
+}
+
+/* Filter & Sort */
+const cats={jailbreak:"Jailbreak",data_extraction:"Exfiltração",priv_esc:"Priv.Esc.",
+  prompt_injection:"Injeção",social_eng:"Social Eng.",financial_fraud:"Fraude",
+  misinformation:"Desinform.",none:"Normal",other:"Outro"};
+
+function applyF(){
+  const q=document.getElementById("q").value.toLowerCase();
+  const m=document.getElementById("fm").value;
+  const c=document.getElementById("fc").value;
+  const sortOrder=document.getElementById("sortOrder").value;
+  const onlySucc=document.getElementById("onlySuccessful").checked;
+  const oa=document.getElementById("oa").checked;
+  const os=document.getElementById("os").checked;
+
+  fil=all.filter(i=>{
+    if(m&&i.model_name!==m)return false;
+    if(c&&i.threat_category!==c)return false;
+    if(onlySucc&&i.is_successful_attack!==true) return false;
+    if(oa&&!i.is_adversarial)return false;
+    if(os&&!i.safety_triggered)return false;
+    if(q){const t=(i.user_prompt+" "+(i.assistant_response||"")).toLowerCase();if(!t.includes(q))return false;}
+    return true;
+  });
+
+  // Ordenação (Mais recente vs Mais antiga)
+  fil.sort((a,b)=>{
+    const da = new Date(a.created_at).getTime();
+    const db = new Date(b.created_at).getTime();
+    return sortOrder === "asc" ? da - db : db - da;
+  });
+
+  pg=1;renderStats();renderT();
+}
+
+function renderStats(){
+  const n=fil.length,a=fil.filter(i=>i.is_adversarial).length;
+  const sa=fil.filter(i=>i.safety_triggered).length;
+  const succ=fil.filter(i=>i.is_successful_attack===true).length;
+  document.getElementById("sT").textContent=n;
+  document.getElementById("sA").textContent=a;
+  document.getElementById("sS").textContent=succ;
+  document.getElementById("sSa").textContent=sa;
+  document.getElementById("cnt").textContent=n;
+}
+
+function catCls(c){
+  return{jailbreak:"tj",data_extraction:"td2",priv_esc:"te",prompt_injection:"tpi"}[c]||"tn";
+}
+
+function getAttackResultBadge(it){
+  if (!it.is_adversarial) return '<span style="color:var(--muted);font-size:11px">—</span>';
+  if (it.is_successful_attack === true) {
+    return '<span class="tag tag-attack-succ">💀 SUCESSO</span>';
+  } else if (it.is_successful_attack === false) {
+    return '<span class="tag tag-attack-block">🛡️ BLOQUEADO</span>';
+  } else {
+    return '<span class="tag tag-attack-partial">⚠️ PARCIAL</span>';
+  }
+}
+
+function renderT(){
+  const tb=document.getElementById("tbody"),tbl=document.getElementById("tbl");
+  const ld=document.getElementById("ld"),pge=document.getElementById("pg");
+  ld.style.display="none";tbl.classList.remove("hidden");
+  const s=(pg-1)*PG,e=s+PG,d=fil.slice(s,e),tp=Math.ceil(fil.length/PG);
+  tb.innerHTML="";
+  if(!d.length){
+    tb.innerHTML='<tr><td colspan="10" class="et">Nenhuma interação encontrada.</td></tr>';
+    pge.classList.add("hidden");return;
+  }
+  d.forEach((it,i)=>{
+    const tr=document.createElement("tr");
+    const dt=new Date(it.created_at).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+    const cc=catCls(it.threat_category);
+    const attackBadge=getAttackResultBadge(it);
+
+    tr.innerHTML=`<td class="tm" style="color:var(--muted)">${s+i+1}</td>
+      <td class="tm" style="max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e_(it.model_name)}</td>
+      <td><span class="tag ${cc}">${cats[it.threat_category]||it.threat_category}</span></td>
+      <td>${attackBadge}</td>
+      <td class="tp" title="${e_(it.user_prompt)}">${e_(it.user_prompt)}</td>
+      <td class="tr2" title="${e_(it.assistant_response||'')}">${e_((it.assistant_response||"—").substring(0,100))}</td>
+      <td>${it.safety_triggered?'<span class="tag ts2">🛡️ SIM</span>':'<span style="color:var(--muted);font-size:11px">—</span>'}</td>
+      <td>${it.is_adversarial?'<span class="tag ta">⚠️</span>':'<span style="color:var(--muted);font-size:11px">—</span>'}</td>
+      <td class="tm">${Math.round(it.latency_ms||0)}</td>
+      <td class="tm" style="white-space:nowrap">${dt}</td>`;
+    tr.addEventListener("click",()=>openM(it));
+    tb.appendChild(tr);
+  });
+  pge.classList.remove("hidden");
+  document.getElementById("pinfo").textContent=`Pág. ${pg}/${tp} · ${fil.length} itens`;
+  document.getElementById("prev").disabled=pg<=1;
+  document.getElementById("next").disabled=pg>=tp;
+}
+
+function openM(it){
+  const catLabel = cats[it.threat_category] || it.threat_category;
+  let attackStatusText = "— (Interação Normal)";
+  if (it.is_adversarial) {
+    if (it.is_successful_attack === true) {
+      attackStatusText = "💀 SUCESSO (Ataque bem-sucedido / Modelo comprometido)";
+    } else if (it.is_successful_attack === false) {
+      attackStatusText = "🛡️ BLOQUEADO (Defesa bem-sucedida / Ataque falhou)";
+    } else {
+      attackStatusText = "⚠️ PARCIAL / INCONCLUSIVO (Sem acionamento de safety e sem violação direta)";
+    }
+  }
+
+  document.getElementById("mbody").innerHTML=`
+    <div class="modal-field">
+      <div class="modal-field-label">Provider / Model</div>
+      <div class="modal-field-value">${e_(it.provider)} · ${e_(it.model_name)}</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Session ID</div>
+      <div class="modal-field-value">${e_(it.session_id)}</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Threat Category</div>
+      <div class="modal-field-value">${catLabel} ${it.is_adversarial ? "⚠️ (Adversarial)" : ""}</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Resultado do Ataque</div>
+      <div class="modal-field-value">${attackStatusText}</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Safety Triggered</div>
+      <div class="modal-field-value">${it.safety_triggered ? "🛡️ SIM" : "❌ NÃO"}</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Prompt do Usuário</div>
+      <div class="modal-field-value">${e_(it.user_prompt)}</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Resposta do Assistente</div>
+      <div class="modal-field-value">${e_(it.assistant_response || "—")}</div>
+    </div>
+    ${it.researcher_notes ? `
+    <div class="modal-field">
+      <div class="modal-field-label">Notas do Pesquisador</div>
+      <div class="modal-field-value">${e_(it.researcher_notes)}</div>
+    </div>` : ""}
+    <div class="modal-field">
+      <div class="modal-field-label">Latência / Tokens</div>
+      <div class="modal-field-value">${Math.round(it.latency_ms || 0)}ms · ${it.tokens_used || "?"} tokens</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Timestamp</div>
+      <div class="modal-field-value">${new Date(it.created_at).toLocaleString("pt-BR")}</div>
+    </div>`;
+  document.getElementById("modal").classList.remove("hidden");
+}
+
+document.getElementById("cls").addEventListener("click",()=>document.getElementById("modal").classList.add("hidden"));
+document.getElementById("modal").addEventListener("click",e=>{if(e.target.id==="modal")document.getElementById("modal").classList.add("hidden");});
+document.getElementById("prev").addEventListener("click",()=>{pg--;renderT();scrollTo(0,0);});
+document.getElementById("next").addEventListener("click",()=>{pg++;renderT();scrollTo(0,0);});
+["q","fm","fc","sortOrder"].forEach(id=>document.getElementById(id).addEventListener(id==="q"?"input":"change",applyF));
+["oa","os","onlySuccessful"].forEach(id=>document.getElementById(id).addEventListener("change",applyF));
+document.getElementById("btnR").addEventListener("click",load);
+
+function e_(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+load();
+</script>
+</body>
+</html>
+

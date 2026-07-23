@@ -25,6 +25,7 @@ async def lifespan(app: FastAPI):
         # Cria PostgreSQL Views dinâmicas para cada modelo de LLM
         from sqlalchemy import text
         views_sqls = [
+            "DROP VIEW IF EXISTS view_metrics_by_model;",
             """
             CREATE OR REPLACE VIEW view_metrics_by_model AS
             SELECT 

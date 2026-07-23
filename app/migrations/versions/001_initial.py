@@ -130,6 +130,7 @@ def upgrade() -> None:
         sa.Column("created_by", sa.Integer(), sa.ForeignKey("users.id"), nullable=False),
         sa.Column("title", sa.String(255), nullable=False),
         sa.Column("description", sa.Text(), nullable=False),
+        sa.Column("model_name", sa.String(100), nullable=True, index=True),
         sa.Column("attack_vector", sa.String(100), nullable=False),
         sa.Column("severity", sa.Enum("low", "medium", "high", "critical", name="caseseverity"), default="medium"),
         sa.Column("expected_behavior", sa.Text(), nullable=False),

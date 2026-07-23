@@ -66,13 +66,16 @@ async def chat(
 async def list_interactions(
     session_id: Optional[str] = None,
     model_name: Optional[str] = None,
+    user_id: Optional[int] = None,
     adversarial_only: bool = False,
     limit: int = 50,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Lista histórico de interações com o assistente IA."""
-    query = select(AIInteraction).where(AIInteraction.user_id == current_user.id)
+    """Lista histórico de interações com o assistente IA (pesquisa / auditoria)."""
+    query = select(AIInteraction)
+    if user_id:
+        query = query.where(AIInteraction.user_id == user_id)
     if session_id:
         query = query.where(AIInteraction.session_id == session_id)
     if model_name:

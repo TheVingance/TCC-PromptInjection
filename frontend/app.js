@@ -11,6 +11,7 @@ let currentUser = JSON.parse(localStorage.getItem("finsec_user") || "null");
 let sessionId = crypto.randomUUID();
 let latencyHistory = [];
 let allAdversarialMode = false;
+let lastMetricsData = null; // guarda últimos dados de métricas para redesenhar o gráfico
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
 function isTokenExpired(t) {
@@ -60,6 +61,14 @@ const btnCloseModal  = $("btnCloseModal");
 const btnRefreshMetrics = $("btnRefreshMetrics");
 const latencyCanvas  = $("latencyChart");
 const attacksCanvas  = $("attacksChart");
+const btnOpenAll     = $("btnOpenAllInteractions");
+
+// ─── Open All Interactions (nova janela) ──────────────────────────────────────
+if (btnOpenAll) {
+  btnOpenAll.addEventListener("click", () => {
+    window.open("interactions.html", "_blank");
+  });
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
@@ -431,6 +440,7 @@ async function fetchMetrics() {
     $("metricRate").textContent = data.safety_trigger_rate + "%";
     $("metricAsr").textContent = data.attack_success_rate + "%";
     $("metricAsp").textContent = data.attack_success_probability + "%";
+    lastMetricsData = data; // persiste para redesenho do canvas
     drawAttacksChart(data);
   } catch {}
 }
@@ -653,10 +663,170 @@ function drawLatencyChart() {
   });
 }
 
+// ─── Payload Vulnerability Matrix ────────────────────────────────────────────
+let payloadMatrixData = [];
+let matrixActiveCategory = "all";
+
+async function fetchPayloadMatrix() {
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_BASE}/research/payload-success-matrix`, {
+      headers: { "Authorization": `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    payloadMatrixData = await res.json();
+    renderPayloadMatrix();
+  } catch {}
+}
+
+function renderPayloadMatrix() {
+  const body = $("matrixBody");
+  if (!body) return;
+
+  if (!payloadMatrixData.length) {
+    body.innerHTML = '<p class="empty-state">Nenhum dado adversarial encontrado. Execute os experimentos primeiro.</p>';
+    return;
+  }
+
+  const catLabels = {
+    jailbreak: "Jailbreak",
+    data_extraction: "Exfiltração de Dados",
+    priv_esc: "Escalada de Privilégios",
+    prompt_injection: "Injeção de Prompt",
+    none: "Nenhuma",
+    other: "Outro",
+  };
+
+  body.innerHTML = "";
+
+  payloadMatrixData.forEach(modelEntry => {
+    // Filtra por categoria selecionada
+    const filtered = matrixActiveCategory === "all"
+      ? modelEntry.payloads
+      : modelEntry.payloads.filter(p => p.category === matrixActiveCategory);
+
+    if (!filtered.length) return;
+
+    const successCount = filtered.filter(p => p.attack_succeeded).length;
+    const totalCount = filtered.length;
+    const vulnerabilityPct = Math.round((successCount / totalCount) * 100);
+
+    const modelCard = document.createElement("div");
+    modelCard.className = "matrix-model-card";
+
+    // Calcula cor do nível de risco
+    let riskClass = "risk-low";
+    let riskLabel = "Seguro";
+    if (vulnerabilityPct >= 75) { riskClass = "risk-critical"; riskLabel = "CRÍTICO"; }
+    else if (vulnerabilityPct >= 50) { riskClass = "risk-high"; riskLabel = "ALTO"; }
+    else if (vulnerabilityPct >= 25) { riskClass = "risk-medium"; riskLabel = "MÉDIO"; }
+
+    // Header do card do modelo
+    const modelHeader = document.createElement("div");
+    modelHeader.className = "matrix-model-header";
+    modelHeader.innerHTML = `
+      <div class="matrix-model-name">
+        <span class="matrix-model-icon">🤖</span>
+        <span>${escapeHtml(modelEntry.model_name)}</span>
+      </div>
+      <div class="matrix-model-summary">
+        <span class="matrix-risk-badge ${riskClass}">${riskLabel}</span>
+        <span class="matrix-stat">${successCount}/${totalCount} payloads</span>
+        <span class="matrix-stat-pct">${vulnerabilityPct}% vuln.</span>
+      </div>`;
+
+    // Progress bar
+    const progressBar = document.createElement("div");
+    progressBar.className = "matrix-progress-bar";
+    progressBar.innerHTML = `
+      <div class="matrix-progress-fill ${riskClass}" style="width: ${vulnerabilityPct}%"></div>`;
+
+    // Lista de payloads
+    const payloadList = document.createElement("div");
+    payloadList.className = "matrix-payload-list";
+
+    filtered.forEach(payload => {
+      const item = document.createElement("div");
+      item.className = `matrix-payload-item ${payload.attack_succeeded ? "payload-success" : "payload-blocked"}`;
+
+      const catLabel = catLabels[payload.category] || payload.category;
+      const successRatio = `${payload.successful_runs}/${payload.total_runs}`;
+
+      item.innerHTML = `
+        <div class="payload-status-icon">${payload.attack_succeeded ? "💀" : "🛡️"}</div>
+        <div class="payload-info">
+          <div class="payload-preview" title="${escapeHtml(payload.payload_preview)}">${escapeHtml(payload.payload_preview)}</div>
+          <div class="payload-meta">
+            <span class="payload-cat-badge cat-${payload.category}">${catLabel}</span>
+            <span class="payload-runs">${successRatio} exec. com sucesso</span>
+          </div>
+        </div>
+        <div class="payload-result-badge ${payload.attack_succeeded ? "badge-success" : "badge-blocked"}">
+          ${payload.attack_succeeded ? `SUCESSO<br><small>${successRatio}</small>` : `BLOQUEADO<br><small>${successRatio}</small>`}
+        </div>`;
+
+      payloadList.appendChild(item);
+    });
+
+    modelCard.appendChild(modelHeader);
+    modelCard.appendChild(progressBar);
+    modelCard.appendChild(payloadList);
+    body.appendChild(modelCard);
+  });
+
+  if (!body.children.length) {
+    body.innerHTML = '<p class="empty-state">Nenhum payload encontrado para esta categoria.</p>';
+  }
+}
+
+// ─── Panel Tab Switcher ───────────────────────────────────────────────────────
+function switchPanelTab(tab) {
+  const tabAttacks = $("tabAttacks");
+  const tabMatrix = $("tabMatrix");
+  const contentAttacks = $("tabContentAttacks");
+  const contentMatrix = $("tabContentMatrix");
+
+  if (tab === "attacks") {
+    tabAttacks.classList.add("active");
+    tabMatrix.classList.remove("active");
+    contentAttacks.classList.add("active");
+    contentAttacks.classList.remove("hidden");
+    contentMatrix.classList.add("hidden");
+    contentMatrix.classList.remove("active");
+    // Aguarda o DOM re-calcular o layout do canvas antes de medir e desenhar
+    requestAnimationFrame(() => {
+      setupAttacksCanvas();
+      if (lastMetricsData) drawAttacksChart(lastMetricsData);
+    });
+  } else {
+    tabMatrix.classList.add("active");
+    tabAttacks.classList.remove("active");
+    contentMatrix.classList.add("active");
+    contentMatrix.classList.remove("hidden");
+    contentAttacks.classList.add("hidden");
+    contentAttacks.classList.remove("active");
+    if (token) fetchPayloadMatrix();
+  }
+}
+
+// ─── Matrix Category Filter Chips ────────────────────────────────────────────
+const matrixFilterChips = $("matrixFilterChips");
+if (matrixFilterChips) {
+  matrixFilterChips.addEventListener("click", e => {
+    const chip = e.target.closest(".chip");
+    if (!chip) return;
+    matrixFilterChips.querySelectorAll(".chip").forEach(c => c.classList.remove("chip-active"));
+    chip.classList.add("chip-active");
+    matrixActiveCategory = chip.dataset.cat;
+    renderPayloadMatrix();
+  });
+}
+
 // ─── Refresh All ──────────────────────────────────────────────────────────────
 async function refreshAll() {
-  await Promise.all([fetchMetrics(), fetchInteractions()]);
+  await Promise.all([fetchMetrics(), fetchInteractions(), fetchPayloadMatrix()]);
 }
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function escapeHtml(str) {

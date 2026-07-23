@@ -21,6 +21,7 @@ class AdversarialCase(Base):
     created_by: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
+    model_name: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     attack_vector: Mapped[str] = mapped_column(String(100), nullable=False)  # e.g. "prompt_injection"
     severity: Mapped[CaseSeverity] = mapped_column(
         Enum(CaseSeverity, values_callable=lambda obj: [e.value for e in obj]),

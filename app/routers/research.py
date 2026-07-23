@@ -111,17 +111,27 @@ async def get_security_metrics(
     # ASP: Razão entre execuções bem-sucedidas do ataque e o total de execuções adversariais
     asp = round((success_count / total_runs) * 100, 2) if total_runs > 0 else 0.0
 
-    # ASR: Razão entre payloads únicos que obtiveram pelo menos um sucesso e o total de payloads únicos
-    unique_stmt = (
-        select(
-            AIInteraction.user_prompt,
-            func.max(cast(AdversarialCase.is_successful_attack, Integer)).label("has_success")
-        )
-        .join(AdversarialCase, AdversarialCase.interaction_id == AIInteraction.id)
-        .group_by(AIInteraction.user_prompt)
-    )
+    # ASR: Razão entre payloads únicos (por modelo) que obtiveram pelo menos um sucesso e o total de payloads únicos
     if model_name:
-        unique_stmt = unique_stmt.where(AIInteraction.model_name == model_name)
+        unique_stmt = (
+            select(
+                AIInteraction.user_prompt,
+                func.max(cast(AdversarialCase.is_successful_attack, Integer)).label("has_success")
+            )
+            .join(AdversarialCase, AdversarialCase.interaction_id == AIInteraction.id)
+            .where(AIInteraction.model_name == model_name)
+            .group_by(AIInteraction.user_prompt)
+        )
+    else:
+        unique_stmt = (
+            select(
+                AIInteraction.model_name,
+                AIInteraction.user_prompt,
+                func.max(cast(AdversarialCase.is_successful_attack, Integer)).label("has_success")
+            )
+            .join(AdversarialCase, AdversarialCase.interaction_id == AIInteraction.id)
+            .group_by(AIInteraction.model_name, AIInteraction.user_prompt)
+        )
 
     unique_res = await db.execute(unique_stmt)
     unique_rows = unique_res.all()

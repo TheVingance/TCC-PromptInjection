@@ -45,9 +45,13 @@ def get_token():
         print(f"Erro ao autenticar: {e}")
         return None
 
-def fetch_metrics(token):
+def fetch_metrics(token: str, model_name: Optional[str] = None):
+    """Busca métricas de segurança via API backend (geral ou filtrado por modelo)."""
+    url = f"{API_BASE_URL}/research/metrics"
+    if model_name:
+        url += f"?model_name={urllib.parse.quote(model_name)}"
     req = urllib.request.Request(
-        f"{API_BASE_URL}/research/metrics",
+        url,
         headers={"Authorization": f"Bearer {token}"},
         method="GET"
     )
@@ -77,7 +81,7 @@ def main():
             "Modelos disponíveis (--model):\n"
             + "".join(f"  {m}\n" for m in MODEL_CONFIG_MAP.keys())
             + "\nExemplos:\n"
-            "  python scripts/run_experiments.py                          # Todos os 7 modelos juntos\n"
+            "  python scripts/run_experiments.py                          # Todos os modelos juntos\n"
             "  python scripts/run_experiments.py --model llama3.1:latest # Apenas Llama 3.1\n"
             "  python scripts/run_experiments.py --model gemma4:31b      # Apenas Gemma 4 31B\n"
         )
@@ -102,8 +106,8 @@ def main():
         total_exec = "100 execuções (20 payloads × 5 repetições)"
     else:
         config_file = ALL_MODELS_CONFIG
-        label = "TODOS os 6 modelos"
-        total_exec = "600 execuções (6 modelos × 20 payloads × 5 repetições)"
+        label = "TODOS os modelos"
+        total_exec = "execução acumulada de todos os modelos"
 
     print("=" * 60)
     print("[FinSecAI] Iniciando Ciclo de Avaliação de Segurança...")
@@ -127,7 +131,7 @@ def main():
         print("[Erro] Não foi possível buscar as métricas pois a autenticação falhou.")
         return
 
-    metrics = fetch_metrics(token)
+    metrics = fetch_metrics(token, model_name=args.model)
     if not metrics:
         print("[Erro] Falha ao recuperar as métricas do servidor.")
         return

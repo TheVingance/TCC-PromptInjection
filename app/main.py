@@ -55,7 +55,6 @@ async def lifespan(app: FastAPI):
             """,
             "CREATE OR REPLACE VIEW vw_interactions_nemotron_mini AS SELECT * FROM ai_interactions WHERE model_name LIKE '%nemotron%';",
             "CREATE OR REPLACE VIEW vw_interactions_gemma4 AS SELECT * FROM ai_interactions WHERE model_name = 'gemma4:latest';",
-            "CREATE OR REPLACE VIEW vw_interactions_gemma4_31b AS SELECT * FROM ai_interactions WHERE model_name = 'gemma4:31b';",
             "CREATE OR REPLACE VIEW vw_interactions_llama3_1 AS SELECT * FROM ai_interactions WHERE model_name = 'llama3.1:latest';",
             "CREATE OR REPLACE VIEW vw_interactions_llama3_8b AS SELECT * FROM ai_interactions WHERE model_name = 'llama3:8b';",
             "CREATE OR REPLACE VIEW vw_interactions_deepseek_r1 AS SELECT * FROM ai_interactions WHERE model_name = 'deepseek-r1:latest';",

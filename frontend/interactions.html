@@ -142,7 +142,6 @@
   </div>
 
   <div class="tb">
-    <input class="ti" type="text" id="q" placeholder="🔍 Buscar no prompt ou resposta..." />
     <select class="ts" id="sortOrder">
       <option value="desc">⬇️ Mais Recente Primeiro</option>
       <option value="asc">⬆️ Mais Antiga Primeiro</option>
@@ -162,6 +161,7 @@
       <option value="prompt_injection">Injeção de Prompt</option>
       <option value="none">Normal</option>
     </select>
+    <select class="ts" id="fp" style="max-width:280px"><option value="">📦 Todos os Payloads</option></select>
     <label class="tg"><input type="checkbox" id="onlySuccessful" /> 💀 Invasões com Sucesso</label>
     <label class="tg"><input type="checkbox" id="oa" /> ⚠️ Só adversariais</label>
     <label class="tg"><input type="checkbox" id="os" /> 🛡️ Safety triggered</label>
@@ -221,7 +221,7 @@ async function load(){
   try{
     const r=await fetch(API+"/research/export",{headers:{"Authorization":"Bearer "+tok}});
     if(!r.ok)throw new Error("HTTP "+r.status);
-    all=await r.json();applyF();
+    all=await r.json();buildPayloadFilter();applyF();
   }catch(e){ld.innerHTML="<span style='color:var(--dan)'>Erro: "+e.message+"</span>";}
 }
 
@@ -230,10 +230,38 @@ const cats={jailbreak:"Jailbreak",data_extraction:"Exfiltração",priv_esc:"Priv
   prompt_injection:"Injeção",social_eng:"Social Eng.",financial_fraud:"Fraude",
   misinformation:"Desinform.",none:"Normal",other:"Outro"};
 
+/* Populate payload dropdown after data loads */
+function buildPayloadFilter(){
+  const sel=document.getElementById("fp");
+  const prev=sel.value;
+  // Collect unique payloads (adversarial ones have more relevance, but include all)
+  const seen=new Map();
+  all.forEach(i=>{
+    const key=i.user_prompt;
+    if(!seen.has(key)){
+      const label=(key.length>80?key.substring(0,80)+"…":key);
+      seen.set(key,label);
+    }
+  });
+  // Rebuild options, keeping blank first
+  sel.innerHTML='<option value="">📦 Todos os Payloads</option>';
+  // Sort alphabetically by label
+  const sorted=[...seen.entries()].sort((a,b)=>a[1].localeCompare(b[1],"pt-BR"));
+  sorted.forEach(([key,label])=>{
+    const opt=document.createElement("option");
+    opt.value=key;
+    opt.textContent=label;
+    sel.appendChild(opt);
+  });
+  // Restore previous selection if still valid
+  if(prev&&seen.has(prev))sel.value=prev;
+}
+
 function applyF(){
-  const q=document.getElementById("q").value.toLowerCase();
+  const q="";
   const m=document.getElementById("fm").value;
   const c=document.getElementById("fc").value;
+  const fp=document.getElementById("fp").value;
   const sortOrder=document.getElementById("sortOrder").value;
   const onlySucc=document.getElementById("onlySuccessful").checked;
   const oa=document.getElementById("oa").checked;
@@ -242,6 +270,7 @@ function applyF(){
   fil=all.filter(i=>{
     if(m&&i.model_name!==m)return false;
     if(c&&i.threat_category!==c)return false;
+    if(fp&&i.user_prompt!==fp)return false;
     if(onlySucc&&i.is_successful_attack!==true) return false;
     if(oa&&!i.is_adversarial)return false;
     if(os&&!i.safety_triggered)return false;
@@ -389,7 +418,7 @@ document.getElementById("cls").addEventListener("click",()=>document.getElementB
 document.getElementById("modal").addEventListener("click",e=>{if(e.target.id==="modal")document.getElementById("modal").classList.add("hidden");});
 document.getElementById("prev").addEventListener("click",()=>{pg--;renderT();scrollTo(0,0);});
 document.getElementById("next").addEventListener("click",()=>{pg++;renderT();scrollTo(0,0);});
-["q","fm","fc","sortOrder"].forEach(id=>document.getElementById(id).addEventListener(id==="q"?"input":"change",applyF));
+["fm","fc","fp","sortOrder"].forEach(id=>document.getElementById(id).addEventListener("change",applyF));
 ["oa","os","onlySuccessful"].forEach(id=>document.getElementById(id).addEventListener("change",applyF));
 document.getElementById("btnR").addEventListener("click",load);
 

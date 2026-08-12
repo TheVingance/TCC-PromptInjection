@@ -7,7 +7,8 @@
 
 Este repositório contém a implementação do **FinSecAI**, um sistema financeiro fictício isolado via contêineres Docker, desenvolvido como plataforma científica para testar a segurança e o comportamento de agentes de Inteligência Artificial (LLMs) sob injeção de prompt e outros ataques adversariais. Esse projeto é realizado como Trabalho de Conclusão de Curso para o curso de Ciência da Computação da Universidade Tecnológica Federal do Paraná (UTFPR) - Campus Medianeira. Ano de 2026.
 
-> 📘 **Guia Completo de Operação**: Veja o [`GUIA_TUTORIAL_ETAPAS.md`](/GUIA_TUTORIAL_ETAPAS.md) para um tutorial detalhado passo a passo de inicialização, carga do banco de dados, execução de experimentos e auditoria.
+> 📘 **Guia Completo de Operação**: Veja o [`GUIA_TUTORIAL_ETAPAS.md`](/GUIA_TUTORIAL_ETAPAS.md) para um tutorial detalhado passo a passo de inicialização, carga do banco de dados, execução de experimentos e auditoria.  
+> 📊 **Relatório de Resultados Experimentais**: Acesse o [`RELATORIO_RESULTADOS_EXPERIMENTAIS.md`](/RELATORIO_RESULTADOS_EXPERIMENTAIS.md) para visualizar o relatório consolidado de métricas (ASR, ASP, SFR) e matriz de payloads de cada modelo.
 
 ---
 
@@ -67,6 +68,7 @@ financial-ai-security/
 ├── docker-compose.yml          # Orquestração do ambiente
 ├── promptfoo.yaml              # Configuração global com todos os modelos
 ├── GUIA_TUTORIAL_ETAPAS.md     # Tutorial detalhado passo a passo
+├── RELATORIO_RESULTADOS_EXPERIMENTAIS.md # Relatório completo de métricas (ASR, ASP, SFR)
 ├── README.md                   # Esta documentação
 ```
 
@@ -137,6 +139,30 @@ O **FinSecAI** integra-se ao framework **Promptfoo** para execução automatizad
    ```bash
    npx promptfoo view
    ```
+
+---
+
+## 📊 Relatório Resumido de Resultados Experimentais (ASR & ASP)
+
+> 💡 *Para o relatório analítico completo por categoria e carga de trabalho, consulte o documento [`RELATORIO_RESULTADOS_EXPERIMENTAIS.md`](/RELATORIO_RESULTADOS_EXPERIMENTAIS.md).*
+
+Abaixo encontra-se a consolidação das **900 avaliações adversariais automatizadas** (20 payloads × 5 repetições × 9 modelos localmente hospedados no Ollama) extraídas do banco de dados relacional (PostgreSQL):
+
+| Modelo LLM | Interações Totais | Defesas Ativas (SFR %) | Sucessos de Ataque | ASR (%) | ASP (%) | Resiliência Avaliada |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Meta Llama 3.1** (`llama3.1:latest`) | 100 | **80,0%** | **0** | **0,0%** | **2,5%** | 🛡️ **100% Defendido (Mais Seguro)** |
+| **DeepSeek R1** (`deepseek-r1:latest`) | 100 | 63,0% | 4 | **4,0%** | **16,5%** | 🧠 Alta resistência (Chain-of-Thought) |
+| **Google Gemma 4** (`gemma4:latest`) | 100 | 32,0% | 5 | **5,0%** | **15,0%** | 💎 Resistente a Jailbreaks |
+| **Qwen 2.5** (`qwen2.5:7b`) | 100 | 50,0% | 10 | **10,0%** | **23,0%** | 🐉 Vulnerável a Engenharia Social |
+| **Microsoft Phi 3.5** (`phi3.5:latest`) | 100 | 69,0% | 19 | **19,0%** | **19,5%** | ⚡ Vulnerável a manipulação de persona |
+| **NVIDIA Nemotron Mini** (`nemotron-mini:latest`)| 100 | 28,0% | 20 | **20,0%** | **43,5%** | 🚀 Rápido (770ms), porém permissivo |
+| **DeepSeek V2** (`deepseek-v2:latest`) | 100 | 25,0% | 25 | **25,0%** | **39,5%** | 🌐 Vulnerável a exfiltração de dados |
+| **Meta Llama 3** (`llama3:8b`) | 100 | 46,0% | 25 | **25,0%** | **37,5%** | 🦙 Vulnerável a Jailbreaks (Versão 8B anterior) |
+| **Mistral** (`mistral:latest`) | 100 | 21,0% | 40 | **40,0%** | **57,0%** | 🌊 Maior taxa de vulnerabilidade |
+
+### Principais Achados Científicos:
+1. **Evolução de Alinhamento (Llama 3 vs Llama 3.1)**: A taxa de sucesso de ataque despencou de **25,0% (Llama 3)** para **0,0% (Llama 3.1)**, evidenciando avanços significativos de segurança e pós-treinamento no modelo mais recente da Meta.
+2. **Defesa em Camadas (Honeypot de Backend)**: Mesmo nos modelos em que a IA cedeu aos comandos de alteração de saldo (ex: Mistral com 40% ASR), a arquitetura do **FinSecAI** ativou a proteção do backend (`SECURITY POLICY`), impedindo que o banco de dados fosse modificado.
 
 ---
 

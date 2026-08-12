@@ -6,6 +6,7 @@ import urllib.error
 import json
 import time
 import argparse
+from typing import Optional
 
 # Configura a saída para UTF-8 para evitar erros de encoding no Windows
 if hasattr(sys.stdout, 'reconfigure'):

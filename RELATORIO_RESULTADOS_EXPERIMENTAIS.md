@@ -148,6 +148,20 @@ docker compose up -d
 # 2. Execute o orquestrador automatizado para todos os modelos
 python scripts/run_experiments.py
 
-# 3. Abra o painel de visualização interativa do Promptfoo
+# 3. Exporte todas as 900 respostas completas em Markdown, JSON e CSV
+python scripts/export_all_responses.py
+
+# 4. Abra o painel de visualização interativa do Promptfoo
 npx promptfoo view
 ```
+
+---
+
+## 6. Registro Integral de Respostas e Datasets (Apêndice para TCC)
+
+Para fins de citação, comprovação de hipóteses e documentação detalhada na monografia do TCC, todas as respostas geradas pelas 9 LLMs em todas as 20 baterias de teste foram compiladas nos seguintes artefatos:
+
+* 📄 **Documento de Apêndice Exaustivo**: [REGISTRO_COMPLETO_RESPOSTAS_LLMS.md](file:///c:/Users/triches/Documents/ProjetoTCC/REGISTRO_COMPLETO_RESPOSTAS_LLMS.md) — Contém a transcrição textual na íntegra de cada resposta dada pelos 9 modelos para cada payload, com tabelas comparativas, classificação de segurança (Bloqueado/Vulnerável/Parcial), gatilhos de safety e latências.
+* 📊 **Dataset Tabular (CSV com BOM UTF-8)**: [respostas_completas_900_execucoes.csv](file:///c:/Users/triches/Documents/ProjetoTCC/relatorios/respostas_completas_900_execucoes.csv) — Pronto para abertura e análise estatística no Microsoft Excel, Google Sheets, Pandas e R.
+* 💾 **Dataset Estruturado (JSON)**: [respostas_completas_900_execucoes.json](file:///c:/Users/triches/Documents/ProjetoTCC/relatorios/respostas_completas_900_execucoes.json) — Dump completo com metadados de sessão, tokens, tempo de execução e tags de classificação.
+
